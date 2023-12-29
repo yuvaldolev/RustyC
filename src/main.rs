@@ -1,6 +1,8 @@
-use std::str::Chars;
+use std::slice::Iter;
 
 use clap::Parser;
+
+use rustyc::{Lexer, Token};
 
 #[derive(Parser)]
 #[command(author = "ydolev", version = "0.1.0", about = "A minimalist C compiler written in Rust", long_about = None)]
@@ -8,34 +10,39 @@ struct Cli {
     expression: String,
 }
 
-const EOF_CHAR: char = '\0';
-
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+
+    let lexer = Lexer::new(cli.expression);
+    let tokens = lexer.lex()?;
+    let mut tokens_iterator = tokens.iter();
 
     println!(".text");
     println!();
     println!(".global _main");
     println!("_main:");
 
-    let mut chars = cli.expression.chars();
+    println!(
+        "  mov x0, #{}",
+        expect_number(expect_token(&mut tokens_iterator)?)?
+    );
 
-    println!("  mov x0, #{}", lex_number(&cli.expression, &mut chars)?);
-
-    while !is_eof(&chars) {
-        let at = peek_first(&chars);
-        advance(&mut chars);
-
-        match at {
-            '+' => println!(
-                "  add x0, x0, #{}",
-                lex_number(&cli.expression, &mut chars)?
-            ),
-            '-' => println!(
-                "  sub x0, x0, #{}",
-                lex_number(&cli.expression, &mut chars)?
-            ),
-            _ => return Err(rustyc::Error::SyntaxError(at).into()),
+    while let Some(token) = tokens_iterator.next() {
+        let punctuator = expect_punctuator(token)?;
+        match punctuator {
+            '+' => {
+                println!(
+                    "  add x0, x0, #{}",
+                    expect_number(expect_token(&mut tokens_iterator)?)?
+                );
+            }
+            '-' => {
+                println!(
+                    "  sub x0, x0, #{}",
+                    expect_number(expect_token(&mut tokens_iterator)?)?
+                );
+            }
+            _ => {}
         }
     }
 
@@ -44,34 +51,26 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn lex_number(source: &str, chars: &mut Chars) -> rustyc::Result<u64> {
-    let start_index = index(source, chars);
-    while peek_first(chars).is_ascii_digit() {
-        advance(chars);
+fn expect_token<'a>(tokens: &'a mut Iter<Token>) -> rustyc::Result<&'a Token> {
+    tokens.next().ok_or(rustyc::Error::UnexpectedEof)
+}
+
+fn expect_number(token: &Token) -> rustyc::Result<u64> {
+    match token {
+        Token::Number(value) => Ok(*value),
+        _ => Err(rustyc::Error::UnexpectedToken(
+            token.clone(),
+            String::from("number"),
+        )),
     }
-
-    let number_source = &source[start_index..index(source, chars)];
-    number_source
-        .parse()
-        .map_err(|e| rustyc::Error::ParseNumber(e, number_source.to_owned()))
 }
 
-fn peek_first(chars: &Chars) -> char {
-    peek_nth(chars, 0)
-}
-
-fn peek_nth(chars: &Chars, n: usize) -> char {
-    chars.clone().nth(n).unwrap_or(EOF_CHAR)
-}
-
-fn index(source: &str, chars: &Chars) -> usize {
-    source.len() - chars.as_str().len()
-}
-
-fn is_eof(chars: &Chars) -> bool {
-    EOF_CHAR == peek_first(chars)
-}
-
-fn advance(chars: &mut Chars) {
-    chars.next();
+fn expect_punctuator(token: &Token) -> rustyc::Result<char> {
+    match token {
+        Token::Punctuator(character) => Ok(*character),
+        _ => Err(rustyc::Error::UnexpectedToken(
+            token.clone(),
+            String::from("punctuator"),
+        )),
+    }
 }
