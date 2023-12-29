@@ -15,7 +15,12 @@ assert() {
 
     pushd "$TESTS_DIR" > /dev/null
 
-    cargo run -- "$input" > test.s || fail
+    cargo run -- "$input" > test.s
+    local rustc_status="$?"
+    if [[ 0 != $rustc_status ]]; then
+        fail
+        return
+    fi
 
     clang -o test test.s 
     ./test
@@ -33,6 +38,7 @@ assert() {
 
 assert 0 0
 assert 42 42
+assert 21 "5+20-4"
 
 if [[ 1 == $RESULT ]]; then
     echo OK
