@@ -13,7 +13,10 @@ struct Cli {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    let lexer = Lexer::new(cli.expression);
+    let source = Rc::new(cli.expression);
+
+    let 
+    let lexer = Lexer::new(source.as_str());
     let tokens = lexer.lex()?;
     let mut tokens_iterator = tokens.iter();
 
