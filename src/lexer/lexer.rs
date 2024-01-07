@@ -1,27 +1,31 @@
-use super::{raw_token_cursor::RawTokenCursor, raw_token_kind::RawTokenKind};
 use crate::{
+    diagnostics::{self, Diagnostic, DiagnosticEmitter},
     span::Span,
-    token::{BinaryOperationToken, Token, TokenKind},
+    token::{Base, BinaryOperatorToken, Token, TokenKind},
 };
+
+use super::{raw_token_cursor::RawTokenCursor, raw_token_kind::RawTokenKind};
 
 pub struct Lexer<'a> {
     source: &'a str,
+    diagnostic_emitter: &'a mut DiagnosticEmitter,
     cursor: RawTokenCursor<'a>,
     start_position: usize,
     position: usize,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(source: &'a str) -> Self {
+    pub fn new(source: &'a str, diagnostic_emitter: &'a mut DiagnosticEmitter) -> Self {
         Self {
             source,
+            diagnostic_emitter,
             cursor: RawTokenCursor::new(source),
             start_position: 0,
             position: 0,
         }
     }
 
-    pub fn lex(&mut self) -> error::Result<Vec<Token>> {
+    pub fn lex(&mut self) -> diagnostics::Result<Vec<Token>> {
         let mut tokens = Vec::new();
 
         loop {
@@ -31,28 +35,35 @@ impl<'a> Lexer<'a> {
             self.position += raw_token.get_length();
 
             let kind = match raw_token.get_kind() {
-                RawTokenKind::Plus => TokenKind::BinaryOperation(BinaryOperationToken::Plus),
-                RawTokenKind::Minus => TokenKind::BinaryOperation(BinaryOperationToken::Minus),
-                RawTokenKind::Number => self.lex_number(start),
+                RawTokenKind::Plus => TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
+                RawTokenKind::Minus => TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
+                RawTokenKind::Number => self.lex_number(start)?,
                 RawTokenKind::Whitespace => continue,
                 RawTokenKind::Eof => break,
-                RawTokenKind::Unknown => todo!(),
+                RawTokenKind::Unknown => {
+                    let error = diagnostics::Error::UnknownTokenStart;
+                    self.diagnostic_emitter
+                        .emit(Diagnostic::new_error(error.clone(), self.span_from(start)));
+                    return Err(error);
+                }
             };
+
+            tokens.push(Token::new(kind, self.span_from(start)));
         }
 
         Ok(tokens)
     }
 
-    fn lex_number(&self, start: usize) -> TokenKind {
-        let source = self.source_from(start);
+    fn lex_number(&mut self, start: usize) -> diagnostics::Result<TokenKind> {
+        let source = self.source_from(start - 1);
         let value = source.parse().map_err(|e| {
-            let error = diagnostic::Error::ParseNumber(e);
-            self.diagnostic_emitter.emit(Diagnostic::new_error(
-                error,
-                Span::new(start, self.position),
-            ));
+            let error = diagnostics::Error::ParseNumber(e);
+            self.diagnostic_emitter
+                .emit(Diagnostic::new_error(error.clone(), self.span_from(start)));
             error
-        });
+        })?;
+
+        Ok(TokenKind::Number(Base::Decimal, value))
     }
 
     fn source_index(&self, position: usize) -> usize {
@@ -69,5 +80,9 @@ impl<'a> Lexer<'a> {
 
     fn source_from_to_end(&self, start: usize) -> &'a str {
         &self.source[self.source_index(start)..]
+    }
+
+    fn span_from(&self, start: usize) -> Span {
+        Span::new(start, self.position)
     }
 }

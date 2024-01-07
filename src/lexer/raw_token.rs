@@ -1,3 +1,5 @@
+use super::raw_token_kind::RawTokenKind;
+
 pub struct RawToken {
     kind: RawTokenKind,
     length: usize,
@@ -8,8 +10,8 @@ impl RawToken {
         Self { kind, length }
     }
 
-    pub fn get_kind(&self) -> RawTokenKind {
-        self.kind
+    pub fn get_kind(&self) -> &RawTokenKind {
+        &self.kind
     }
 
     pub fn get_length(&self) -> usize {
