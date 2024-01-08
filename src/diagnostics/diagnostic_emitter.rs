@@ -1,7 +1,5 @@
 use std::error::Error;
 
-use crate::span::Span;
-
 use super::{diagnostic_kind::DiagnosticKind, error, Diagnostic};
 
 pub struct DiagnosticEmitter {
@@ -25,11 +23,6 @@ impl DiagnosticEmitter {
         match diagnostic.get_kind() {
             DiagnosticKind::Error(e) => self.emit_error_diagnostic(&diagnostic, e),
         }
-    }
-
-    pub fn emit_error(&mut self, error: error::Error, span: Span) -> error::Result<()> {
-        self.emit(Diagnostic::new_error(error.clone(), span));
-        Err(error)
     }
 
     fn emit_error_diagnostic(&mut self, diagnostic: &Diagnostic, e: &error::Error) {

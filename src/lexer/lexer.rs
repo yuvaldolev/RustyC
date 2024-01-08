@@ -1,5 +1,5 @@
 use crate::{
-    diagnostics::{self, Diagnostic, DiagnosticEmitter},
+    diagnostics::{self, Diagnostic},
     span::Span,
     token::{Base, BinaryOperatorToken, Token, TokenKind},
 };
@@ -8,17 +8,15 @@ use super::{raw_token_cursor::RawTokenCursor, raw_token_kind::RawTokenKind};
 
 pub struct Lexer<'a> {
     source: &'a str,
-    diagnostic_emitter: &'a mut DiagnosticEmitter,
     cursor: RawTokenCursor<'a>,
     start_position: usize,
     position: usize,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(source: &'a str, diagnostic_emitter: &'a mut DiagnosticEmitter) -> Self {
+    pub fn new(source: &'a str) -> Self {
         Self {
             source,
-            diagnostic_emitter,
             cursor: RawTokenCursor::new(source),
             start_position: 0,
             position: 0,
@@ -41,10 +39,10 @@ impl<'a> Lexer<'a> {
                 RawTokenKind::Whitespace => continue,
                 RawTokenKind::Eof => break,
                 RawTokenKind::Unknown => {
-                    let error = diagnostics::Error::UnknownTokenStart;
-                    self.diagnostic_emitter
-                        .emit(Diagnostic::new_error(error.clone(), self.span_from(start)));
-                    return Err(error);
+                    return Err(Diagnostic::new_error(
+                        diagnostics::Error::UnknownTokenStart,
+                        self.span_from(start),
+                    ))
                 }
             };
 
@@ -55,12 +53,9 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_number(&mut self, start: usize) -> diagnostics::Result<TokenKind> {
-        let source = self.source_from(start - 1);
+        let source = self.source_from(start);
         let value = source.parse().map_err(|e| {
-            let error = diagnostics::Error::ParseNumber(e);
-            self.diagnostic_emitter
-                .emit(Diagnostic::new_error(error.clone(), self.span_from(start)));
-            error
+            Diagnostic::new_error(diagnostics::Error::ParseNumber(e), self.span_from(start))
         })?;
 
         Ok(TokenKind::Number(Base::Decimal, value))
@@ -76,10 +71,6 @@ impl<'a> Lexer<'a> {
 
     fn source_from_to(&self, start: usize, end: usize) -> &'a str {
         &self.source[self.source_index(start)..self.source_index(end)]
-    }
-
-    fn source_from_to_end(&self, start: usize) -> &'a str {
-        &self.source[self.source_index(start)..]
     }
 
     fn span_from(&self, start: usize) -> Span {

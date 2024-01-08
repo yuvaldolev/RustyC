@@ -3,6 +3,8 @@ use crate::{
     lexer::Lexer,
 };
 
+use super::error;
+
 pub struct Compiler {
     source: String,
     diagnostic_emitter: DiagnosticEmitter,
@@ -18,13 +20,15 @@ impl Compiler {
         }
     }
 
-    pub fn run(&mut self) -> diagnostics::Result<()> {
-        self.run_checked()
-            .map_err(|_| diagnostics::Error::Aborted(self.diagnostic_emitter.get_error_count()))
+    pub fn run(&mut self) -> error::Result<()> {
+        self.run_checked().map_err(|diagnostic| {
+            self.diagnostic_emitter.emit(diagnostic);
+            error::Error::Aborted(self.diagnostic_emitter.get_error_count())
+        })
     }
 
     fn run_checked(&mut self) -> diagnostics::Result<()> {
-        let mut lexer = Lexer::new(&self.source, &mut self.diagnostic_emitter);
+        let mut lexer = Lexer::new(&self.source);
         let tokens = lexer.lex()?;
         println!("Tokens: {}", tokens.len());
 
