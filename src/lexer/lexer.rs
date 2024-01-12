@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::{
     diagnostics::{self, Diagnostic},
     span::Span,
@@ -9,23 +11,50 @@ use super::{raw_token_cursor::RawTokenCursor, raw_token_kind::RawTokenKind};
 pub struct Lexer<'a> {
     source: &'a str,
     cursor: RawTokenCursor<'a>,
+    token: Token,
     start_position: usize,
     position: usize,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(source: &'a str) -> Self {
-        Self {
+    pub fn new(source: &'a str) -> diagnostics::Result<Self> {
+        let mut lexer = Self {
             source,
             cursor: RawTokenCursor::new(source),
+            token: Token::new_eof(),
             start_position: 0,
             position: 0,
-        }
+        };
+
+        lexer.bump()?;
+
+        Ok(lexer)
     }
 
     pub fn lex(&mut self) -> diagnostics::Result<Vec<Token>> {
         let mut tokens = Vec::new();
 
+        loop {
+            match self.token.get_kind() {
+                TokenKind::Eof => break,
+                _ => tokens.push(self.bump()?),
+            }
+        }
+
+        Ok(tokens)
+    }
+
+    fn bump(&mut self) -> diagnostics::Result<Token> {
+        let next_token = self.lex_token()?;
+
+        // TODO: Perform token gluing here.
+
+        let this_token = mem::replace(&mut self.token, next_token);
+
+        Ok(this_token)
+    }
+
+    fn lex_token(&mut self) -> diagnostics::Result<Token> {
         loop {
             let raw_token = self.cursor.next();
 
@@ -35,9 +64,11 @@ impl<'a> Lexer<'a> {
             let kind = match raw_token.get_kind() {
                 RawTokenKind::Plus => TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
                 RawTokenKind::Minus => TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
+                RawTokenKind::Multiply => TokenKind::BinaryOperator(BinaryOperatorToken::Multiply),
+                RawTokenKind::Divide => TokenKind::BinaryOperator(BinaryOperatorToken::Divide),
                 RawTokenKind::Number => self.lex_number(start)?,
                 RawTokenKind::Whitespace => continue,
-                RawTokenKind::Eof => break,
+                RawTokenKind::Eof => TokenKind::Eof,
                 RawTokenKind::Unknown => {
                     return Err(Diagnostic::new_error(
                         diagnostics::Error::UnknownTokenStart,
@@ -46,10 +77,8 @@ impl<'a> Lexer<'a> {
                 }
             };
 
-            tokens.push(Token::new(kind, self.span_from(start)));
+            return Ok(Token::new(kind, self.span_from(start)));
         }
-
-        Ok(tokens)
     }
 
     fn lex_number(&mut self, start: usize) -> diagnostics::Result<TokenKind> {

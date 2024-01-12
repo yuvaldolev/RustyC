@@ -1,6 +1,7 @@
 use crate::{
     diagnostics::{self, DiagnosticEmitter},
     lexer::Lexer,
+    parser::Parser,
 };
 
 use super::error;
@@ -28,9 +29,11 @@ impl Compiler {
     }
 
     fn run_checked(&mut self) -> diagnostics::Result<()> {
-        let mut lexer = Lexer::new(&self.source);
+        let mut lexer = Lexer::new(&self.source)?;
         let tokens = lexer.lex()?;
-        println!("Tokens: {}", tokens.len());
+
+        let mut parser = Parser::new(tokens);
+        let expression = parser.parse();
 
         Ok(())
     }

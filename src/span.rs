@@ -1,3 +1,4 @@
+#[derive(Clone, Debug)]
 pub struct Span {
     low: usize,
     high: usize,
@@ -6,6 +7,10 @@ pub struct Span {
 impl Span {
     pub fn new(low: usize, high: usize) -> Self {
         Self { low, high }
+    }
+
+    pub fn new_dummy() -> Self {
+        Self::new(0, 0)
     }
 
     pub fn get_low(&self) -> usize {
