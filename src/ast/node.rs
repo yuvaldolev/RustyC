@@ -2,6 +2,7 @@ use crate::span::Span;
 
 use super::node_kind::NodeKind;
 
+#[derive(Debug)]
 pub struct Node {
     kind: NodeKind,
     span: Span,

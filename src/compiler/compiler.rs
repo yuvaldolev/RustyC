@@ -34,6 +34,7 @@ impl Compiler {
 
         let mut parser = Parser::new(tokens);
         let expression = parser.parse()?;
+        println!("Expression: {expression:?}");
 
         Ok(())
     }

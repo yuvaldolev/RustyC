@@ -1,6 +1,6 @@
 use super::{BinaryOperatorToken, DelimiterToken, NumberToken};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
     Number(NumberToken),
     BinaryOperator(BinaryOperatorToken),

@@ -8,6 +8,9 @@ pub enum Error {
     #[error("unknown token start")]
     UnknownTokenStart,
 
+    #[error("unexpected EOF")]
+    UnexpectedEof,
+
     // TODO: Add expected token kind to here once token formatting is implemented.
     #[error("unexpected token")]
     UnexpectedToken,
