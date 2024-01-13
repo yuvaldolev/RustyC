@@ -1,3 +1,5 @@
+use std::cmp;
+
 #[derive(Clone, Debug)]
 pub struct Span {
     low: usize,
@@ -11,6 +13,10 @@ impl Span {
 
     pub fn new_dummy() -> Self {
         Self::new(0, 0)
+    }
+
+    pub fn to(&self, end: &Self) -> Self {
+        Self::new(cmp::min(self.low, end.low), cmp::max(self.high, end.high))
     }
 
     pub fn get_low(&self) -> usize {

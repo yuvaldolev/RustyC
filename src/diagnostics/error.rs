@@ -7,4 +7,8 @@ pub enum Error {
 
     #[error("unknown token start")]
     UnknownTokenStart,
+
+    // TODO: Add expected token kind to here once token formatting is implemented.
+    #[error("unexpected token")]
+    UnexpectedToken,
 }

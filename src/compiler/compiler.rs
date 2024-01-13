@@ -33,7 +33,7 @@ impl Compiler {
         let tokens = lexer.lex()?;
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.parse();
+        let expression = parser.parse()?;
 
         Ok(())
     }

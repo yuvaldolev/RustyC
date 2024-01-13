@@ -1,8 +1,10 @@
 pub enum RawTokenKind {
     Plus,
     Minus,
-    Multiply,
-    Divide,
+    Star,
+    Slash,
+    OpenParenthesis,
+    CloseParenthesis,
     Number,
     Whitespace,
     Eof,

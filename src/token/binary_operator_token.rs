@@ -2,6 +2,6 @@
 pub enum BinaryOperatorToken {
     Plus,
     Minus,
-    Multiply,
-    Divide,
+    Star,
+    Slash,
 }

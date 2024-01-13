@@ -1,13 +1,10 @@
-// use enum_display::EnumDisplay;
+use super::{BinaryOperatorToken, DelimiterToken, NumberToken};
 
-use crate::token::base::Base;
-
-use super::BinaryOperatorToken;
-
-// #[derive(Clone, Debug, EnumDisplay)]
 #[derive(Clone, Debug)]
 pub enum TokenKind {
-    Number(Base, u64),
+    Number(NumberToken),
     BinaryOperator(BinaryOperatorToken),
+    OpenDelimiter(DelimiterToken),
+    CloseDelimiter(DelimiterToken),
     Eof,
 }

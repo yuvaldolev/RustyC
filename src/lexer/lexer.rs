@@ -3,7 +3,7 @@ use std::mem;
 use crate::{
     diagnostics::{self, Diagnostic},
     span::Span,
-    token::{Base, BinaryOperatorToken, Token, TokenKind},
+    token::{BinaryOperatorToken, DelimiterToken, NumberToken, Token, TokenKind},
 };
 
 use super::{raw_token_cursor::RawTokenCursor, raw_token_kind::RawTokenKind};
@@ -64,8 +64,14 @@ impl<'a> Lexer<'a> {
             let kind = match raw_token.get_kind() {
                 RawTokenKind::Plus => TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
                 RawTokenKind::Minus => TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
-                RawTokenKind::Multiply => TokenKind::BinaryOperator(BinaryOperatorToken::Multiply),
-                RawTokenKind::Divide => TokenKind::BinaryOperator(BinaryOperatorToken::Divide),
+                RawTokenKind::Star => TokenKind::BinaryOperator(BinaryOperatorToken::Star),
+                RawTokenKind::Slash => TokenKind::BinaryOperator(BinaryOperatorToken::Slash),
+                RawTokenKind::OpenParenthesis => {
+                    TokenKind::OpenDelimiter(DelimiterToken::Parenthesis)
+                }
+                RawTokenKind::CloseParenthesis => {
+                    TokenKind::CloseDelimiter(DelimiterToken::Parenthesis)
+                }
                 RawTokenKind::Number => self.lex_number(start)?,
                 RawTokenKind::Whitespace => continue,
                 RawTokenKind::Eof => TokenKind::Eof,
@@ -87,7 +93,7 @@ impl<'a> Lexer<'a> {
             Diagnostic::new_error(diagnostics::Error::ParseNumber(e), self.span_from(start))
         })?;
 
-        Ok(TokenKind::Number(Base::Decimal, value))
+        Ok(TokenKind::Number(NumberToken::new(value)))
     }
 
     fn source_index(&self, position: usize) -> usize {

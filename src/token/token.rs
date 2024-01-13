@@ -20,4 +20,8 @@ impl Token {
     pub fn get_kind(&self) -> &TokenKind {
         &self.kind
     }
+
+    pub fn get_span(&self) -> &Span {
+        &self.span
+    }
 }
