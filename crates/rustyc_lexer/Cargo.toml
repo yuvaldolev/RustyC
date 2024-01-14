@@ -1,0 +1,9 @@
+[package]
+name = "rustyc_lexer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rustyc_diagnostics = { path = "../rustyc_diagnostics" }
+rustyc_span = { path = "../rustyc_span" }
+rustyc_token = { path = "../rustyc_token" }

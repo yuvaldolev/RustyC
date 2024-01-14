@@ -1,0 +1,8 @@
+[package]
+name = "rustyc_diagnostics"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rustyc_span = { path = "../rustyc_span" }
+thiserror = "1.0.56"

@@ -1,4 +1,6 @@
-/target
+target/
 
 tests/test
 tests/test.s
+
+crates/**/Cargo.lock
