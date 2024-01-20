@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 rustyc_span = { path = "../rustyc_span" }
+rustyc_token = { path = "../rustyc_token" }
 thiserror = "1.0.56"

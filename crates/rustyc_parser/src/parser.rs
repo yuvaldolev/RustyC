@@ -3,7 +3,9 @@ use std::mem;
 use rustyc_ast::{Node, NodeKind, NumberNode};
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
-use rustyc_token::{BinaryOperatorToken, DelimiterToken, Token, TokenKind};
+use rustyc_token::{
+    BinaryOperatorToken, DelimiterToken, NumberToken, Token, TokenCategory, TokenKind, TokenKindSet,
+};
 
 use crate::token_cursor::TokenCursor;
 
@@ -11,7 +13,7 @@ pub struct Parser {
     cursor: TokenCursor,
     token: Token,
     previous_token: Token,
-    expected_tokens: Vec<TokenKind>,
+    expected_tokens: TokenKindSet,
 }
 
 impl Parser {
@@ -20,7 +22,7 @@ impl Parser {
             cursor: TokenCursor::new(tokens),
             token: Token::new_eof(),
             previous_token: Token::new_eof(),
-            expected_tokens: Vec::new(),
+            expected_tokens: TokenKindSet::new(),
         };
 
         parser.bump();
@@ -29,7 +31,10 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
-        self.parse_expression()
+        let expression = self.parse_expression()?;
+        self.expect_eof()?;
+
+        Ok(expression)
     }
 
     fn bump(&mut self) {
@@ -94,25 +99,11 @@ impl Parser {
             return Ok(node);
         }
 
-        let kind = match self.token.get_kind() {
-            TokenKind::Number(number) => NodeKind::Number(NumberNode::new(number.get_value())),
-            TokenKind::Eof => {
-                return Err(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::UnexpectedEof,
-                    Span::new_dummy(),
-                ))
-            }
-            _ => {
-                return Err(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::UnexpectedToken,
-                    self.token.get_span().clone(),
-                ))
-            }
-        };
+        if let Some(number) = self.eat_number() {
+            return Ok(self.new_node(NodeKind::Number(NumberNode::new(number.get_value())), &low));
+        }
 
-        self.bump();
-
-        Ok(self.new_node(kind, &low))
+        Err(self.token_not_of_category(TokenCategory::Primary))
     }
 
     fn new_node(&self, kind: NodeKind, low: &Span) -> Box<Node> {
@@ -138,8 +129,36 @@ impl Parser {
         if self.eat_close_parenthesis() {
             Ok(())
         } else {
-            Err(self.expected_one_of_not_found())
+            Err(self.unexpected_token())
         }
+    }
+
+    fn expect_eof(&mut self) -> rustyc_diagnostics::Result<()> {
+        if self.check_eof() {
+            Ok(())
+        } else {
+            Err(Diagnostic::new_error(
+                rustyc_diagnostics::Error::EofExpected,
+                self.token.get_span().clone(),
+            ))
+        }
+    }
+
+    fn unexpected_token(&self) -> Diagnostic {
+        Diagnostic::new_error(
+            rustyc_diagnostics::Error::UnexpectedToken(
+                self.token.get_kind().clone(),
+                self.expected_tokens.clone(),
+            ),
+            self.token.get_span().clone(),
+        )
+    }
+
+    fn token_not_of_category(&self, category: TokenCategory) -> Diagnostic {
+        Diagnostic::new_error(
+            rustyc_diagnostics::Error::TokenNotOfCategory(self.token.get_kind().clone(), category),
+            self.token.get_span().clone(),
+        )
     }
 
     fn eat_plus(&mut self) -> bool {
@@ -196,44 +215,61 @@ impl Parser {
         }
     }
 
-    fn check_plus(&self) -> bool {
+    fn eat_number(&mut self) -> Option<NumberToken> {
+        let kind = self.token.get_kind().clone();
+
+        if let TokenKind::Number(token) = kind {
+            self.bump();
+            Some(token)
+        } else {
+            None
+        }
+    }
+
+    fn check_plus(&mut self) -> bool {
         self.check_binary_operator(BinaryOperatorToken::Plus)
     }
 
-    fn check_minus(&self) -> bool {
+    fn check_minus(&mut self) -> bool {
         self.check_binary_operator(BinaryOperatorToken::Minus)
     }
 
-    fn check_star(&self) -> bool {
+    fn check_star(&mut self) -> bool {
         self.check_binary_operator(BinaryOperatorToken::Star)
     }
 
-    fn check_slash(&self) -> bool {
+    fn check_slash(&mut self) -> bool {
         self.check_binary_operator(BinaryOperatorToken::Slash)
     }
 
-    fn check_open_parenthesis(&self) -> bool {
+    fn check_open_parenthesis(&mut self) -> bool {
         self.check_open_delimiter(DelimiterToken::Parenthesis)
     }
 
-    fn check_close_parenthesis(&self) -> bool {
+    fn check_close_parenthesis(&mut self) -> bool {
         self.check_close_delimiter(DelimiterToken::Parenthesis)
     }
 
-    fn check_binary_operator(&self, token: BinaryOperatorToken) -> bool {
+    fn check_binary_operator(&mut self, token: BinaryOperatorToken) -> bool {
         self.check(TokenKind::BinaryOperator(token))
     }
 
-    fn check_open_delimiter(&self, token: DelimiterToken) -> bool {
+    fn check_open_delimiter(&mut self, token: DelimiterToken) -> bool {
         self.check(TokenKind::OpenDelimiter(token))
     }
 
-    fn check_close_delimiter(&self, token: DelimiterToken) -> bool {
+    fn check_close_delimiter(&mut self, token: DelimiterToken) -> bool {
         self.check(TokenKind::CloseDelimiter(token))
     }
 
-    fn check(&self, kind: TokenKind) -> bool {
-        self.expected_tokens.push(kind);
-        (*self.token.get_kind()) == kind
+    fn check_eof(&mut self) -> bool {
+        self.check(TokenKind::Eof)
+    }
+
+    fn check(&mut self, kind: TokenKind) -> bool {
+        let result = (*self.token.get_kind()) == kind;
+        self.expected_tokens.insert(kind);
+
+        result
     }
 }

@@ -155,6 +155,7 @@ name = "rustyc_diagnostics"
 version = "0.1.0"
 dependencies = [
  "rustyc_span",
+ "rustyc_token",
  "thiserror",
 ]
 

@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use rustyc_token::{TokenCategory, TokenKind, TokenKindSet};
+
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
     #[error("failed parsing number")]
@@ -8,13 +10,15 @@ pub enum Error {
     #[error("unknown token start")]
     UnknownTokenStart,
 
-    #[error("unexpected EOF")]
-    UnexpectedEof,
+    #[error("unexpected token '{0}', expected one of: {1}")]
+    UnexpectedToken(TokenKind, TokenKindSet),
 
-    // TODO: Add expected token kind to here once token formatting is implemented.
-    #[error("unexpected token")]
-    UnexpectedToken,
+    #[error("unexpcted token '{0}', expected a {1} token")]
+    TokenNotOfCategory(TokenKind, TokenCategory),
 
     #[error("invalid expression")]
     InvalidExpression,
+
+    #[error("parsing completed without reaching EOF")]
+    EofExpected,
 }
