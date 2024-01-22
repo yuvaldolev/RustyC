@@ -49,6 +49,7 @@ assert 47 "5 + 6 * 7"
 assert 100 "200 /2"
 assert 15 "5* (9 -6)"
 assert 4 "(3+5)/2"
+assert 78 "(34 + 5) * 2"
 popd >/dev/null
 
 if [[ 1 == $RESULT ]]; then
