@@ -20,6 +20,15 @@ impl Node {
         }
     }
 
+    pub fn new_unary(kind: NodeKind, span: Span, left: Box<Node>) -> Self {
+        Self {
+            kind,
+            span,
+            left: Some(left),
+            right: None,
+        }
+    }
+
     pub fn new_binary(kind: NodeKind, span: Span, left: Box<Node>, right: Box<Node>) -> Self {
         Self {
             kind,

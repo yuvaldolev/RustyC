@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use rustyc_token::{TokenCategory, TokenKind, TokenKindSet};
+use rustyc_token::{TokenKind, TokenKindSet};
 
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
@@ -13,12 +13,12 @@ pub enum Error {
     #[error("unexpected token '{0}', expected one of: {1}")]
     UnexpectedToken(TokenKind, TokenKindSet),
 
-    #[error("unexpcted token '{0}', expected a {1} token")]
-    TokenNotOfCategory(TokenKind, TokenCategory),
-
-    #[error("invalid expression")]
-    InvalidExpression,
+    #[error("expected an expression")]
+    ExpressionExpected,
 
     #[error("parsing completed without reaching EOF")]
     EofExpected,
+
+    #[error("invalid expression")]
+    InvalidExpression,
 }

@@ -15,7 +15,7 @@ assert() {
     local expected="$1"
     local input="$2"
 
-    $RUSTYC_PATH "$input" > test.s
+    $RUSTYC_PATH -- "$input" > test.s
     local rustc_status="$?"
     if [[ 0 != $rustc_status ]]; then
         fail
@@ -50,6 +50,10 @@ assert 100 "200 /2"
 assert 15 "5* (9 -6)"
 assert 4 "(3+5)/2"
 assert 78 "(34 + 5) * 2"
+assert 10 "-10+20"
+assert 10 "- -10"
+assert 10 "- - +10"
+assert 8 "-(5 + 3 * 44) + 145"
 popd >/dev/null
 
 if [[ 1 == $RESULT ]]; then

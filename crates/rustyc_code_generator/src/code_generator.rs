@@ -26,9 +26,21 @@ impl CodeGenerator {
     }
 
     fn generate_expression(node: &Node) -> rustyc_diagnostics::Result<()> {
-        if let NodeKind::Number(number) = node.get_kind() {
-            Self::emit_instruction(format!("mov x0, #{}", number.get_value()).as_str());
-            return Ok(());
+        match node.get_kind() {
+            NodeKind::Number(number) => {
+                Self::emit_instruction(format!("mov x0, #{}", number.get_value()).as_str());
+                return Ok(());
+            }
+            NodeKind::Negate => {
+                let left = node.get_left().ok_or(Diagnostic::new_error(
+                    rustyc_diagnostics::Error::InvalidExpression,
+                    node.get_span().clone(),
+                ))?;
+                Self::generate_expression(left)?;
+                Self::emit_instruction("neg x0, x0");
+                return Ok(());
+            }
+            _ => {}
         }
 
         let right = node.get_right().ok_or(Diagnostic::new_error(

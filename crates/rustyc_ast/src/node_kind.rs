@@ -6,5 +6,6 @@ pub enum NodeKind {
     Subtract,
     Multiply,
     Divide,
+    Negate,
     Number(NumberNode),
 }

@@ -4,7 +4,7 @@ use rustyc_ast::{Node, NodeKind, NumberNode};
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
 use rustyc_token::{
-    BinaryOperatorToken, DelimiterToken, NumberToken, Token, TokenCategory, TokenKind, TokenKindSet,
+    BinaryOperatorToken, DelimiterToken, NumberToken, Token, TokenKind, TokenKindSet,
 };
 
 use crate::token_cursor::TokenCursor;
@@ -69,17 +69,17 @@ impl Parser {
     fn parse_multiplication(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
         let low = self.token.get_span().clone();
 
-        let mut node = self.parse_primary()?;
+        let mut node = self.parse_unary()?;
 
         loop {
             if self.eat_star() {
-                let right = self.parse_primary()?;
+                let right = self.parse_unary()?;
                 node = self.new_binary_node(NodeKind::Multiply, &low, node, right);
                 continue;
             }
 
             if self.eat_slash() {
-                let right = self.parse_primary()?;
+                let right = self.parse_unary()?;
                 node = self.new_binary_node(NodeKind::Divide, &low, node, right);
                 continue;
             }
@@ -88,6 +88,21 @@ impl Parser {
         }
 
         Ok(node)
+    }
+
+    fn parse_unary(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+        let low = self.token.get_span().clone();
+
+        if self.eat_plus() {
+            return self.parse_unary();
+        }
+
+        if self.eat_minus() {
+            let left = self.parse_unary()?;
+            return Ok(self.new_unary_node(NodeKind::Negate, &low, left));
+        }
+
+        self.parse_primary()
     }
 
     fn parse_primary(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
@@ -103,11 +118,22 @@ impl Parser {
             return Ok(self.new_node(NodeKind::Number(NumberNode::new(number.get_value())), &low));
         }
 
-        Err(self.token_not_of_category(TokenCategory::Primary))
+        Err(Diagnostic::new_error(
+            rustyc_diagnostics::Error::ExpressionExpected,
+            self.token.get_span().clone(),
+        ))
     }
 
     fn new_node(&self, kind: NodeKind, low: &Span) -> Box<Node> {
         Box::new(Node::new(kind, low.to(self.previous_token.get_span())))
+    }
+
+    fn new_unary_node(&self, kind: NodeKind, low: &Span, left: Box<Node>) -> Box<Node> {
+        Box::new(Node::new_unary(
+            kind,
+            low.to(self.previous_token.get_span()),
+            left,
+        ))
     }
 
     fn new_binary_node(
@@ -126,6 +152,8 @@ impl Parser {
     }
 
     fn expect_close_parenthesis(&mut self) -> rustyc_diagnostics::Result<()> {
+        self.expected_tokens.clear();
+
         if self.eat_close_parenthesis() {
             Ok(())
         } else {
@@ -150,13 +178,6 @@ impl Parser {
                 self.token.get_kind().clone(),
                 self.expected_tokens.clone(),
             ),
-            self.token.get_span().clone(),
-        )
-    }
-
-    fn token_not_of_category(&self, category: TokenCategory) -> Diagnostic {
-        Diagnostic::new_error(
-            rustyc_diagnostics::Error::TokenNotOfCategory(self.token.get_kind().clone(), category),
             self.token.get_span().clone(),
         )
     }
