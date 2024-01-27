@@ -1,4 +1,8 @@
 pub enum RawTokenKind {
+    Equals,
+    LessThan,
+    GreaterThan,
+    Bang,
     Plus,
     Minus,
     Star,

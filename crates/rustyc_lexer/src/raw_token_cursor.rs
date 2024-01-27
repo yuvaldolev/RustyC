@@ -31,6 +31,10 @@ impl<'a> RawTokenCursor<'a> {
                 self.eat_number();
                 RawTokenKind::Number
             }
+            '=' => RawTokenKind::Equals,
+            '<' => RawTokenKind::LessThan,
+            '>' => RawTokenKind::GreaterThan,
+            '!' => RawTokenKind::Bang,
             '+' => RawTokenKind::Plus,
             '-' => RawTokenKind::Minus,
             '*' => RawTokenKind::Star,

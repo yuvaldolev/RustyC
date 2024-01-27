@@ -24,7 +24,7 @@ impl<'a> Lexer<'a> {
             position: 0,
         };
 
-        lexer.bump()?;
+        lexer.bump(false)?;
 
         Ok(lexer)
     }
@@ -35,24 +35,43 @@ impl<'a> Lexer<'a> {
         loop {
             match self.token.get_kind() {
                 TokenKind::Eof => break,
-                _ => tokens.push(self.bump()?),
+                _ => tokens.push(self.bump(true)?),
             }
         }
 
         Ok(tokens)
     }
 
-    fn bump(&mut self) -> rustyc_diagnostics::Result<Token> {
-        let next_token = self.lex_token()?;
-
-        // TODO: Perform token gluing here.
+    fn bump(&mut self, glue: bool) -> rustyc_diagnostics::Result<Token> {
+        let next_token = if glue {
+            self.glue_token()?
+        } else {
+            let (token, _) = self.lex_token()?;
+            token
+        };
 
         let this_token = mem::replace(&mut self.token, next_token);
 
         Ok(this_token)
     }
 
-    fn lex_token(&mut self) -> rustyc_diagnostics::Result<Token> {
+    fn glue_token(&mut self) -> rustyc_diagnostics::Result<Token> {
+        loop {
+            let (next_token, next_token_preceded_by_whitespace) = self.lex_token()?;
+
+            if next_token_preceded_by_whitespace {
+                return Ok(next_token);
+            } else if let Some(glued) = self.token.glue(&next_token) {
+                self.token = glued;
+            } else {
+                return Ok(next_token);
+            }
+        }
+    }
+
+    fn lex_token(&mut self) -> rustyc_diagnostics::Result<(Token, bool)> {
+        let mut preceded_by_whitespace = false;
+
         loop {
             let raw_token = self.cursor.next();
 
@@ -60,6 +79,10 @@ impl<'a> Lexer<'a> {
             self.position += raw_token.get_length();
 
             let kind = match raw_token.get_kind() {
+                RawTokenKind::Equals => TokenKind::Equals,
+                RawTokenKind::LessThan => TokenKind::LessThan,
+                RawTokenKind::GreaterThan => TokenKind::GreaterThan,
+                RawTokenKind::Bang => TokenKind::Not,
                 RawTokenKind::Plus => TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
                 RawTokenKind::Minus => TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
                 RawTokenKind::Star => TokenKind::BinaryOperator(BinaryOperatorToken::Star),
@@ -71,7 +94,10 @@ impl<'a> Lexer<'a> {
                     TokenKind::CloseDelimiter(DelimiterToken::Parenthesis)
                 }
                 RawTokenKind::Number => self.lex_number(start)?,
-                RawTokenKind::Whitespace => continue,
+                RawTokenKind::Whitespace => {
+                    preceded_by_whitespace = true;
+                    continue;
+                }
                 RawTokenKind::Eof => TokenKind::Eof,
                 RawTokenKind::Unknown => {
                     return Err(Diagnostic::new_error(
@@ -81,7 +107,10 @@ impl<'a> Lexer<'a> {
                 }
             };
 
-            return Ok(Token::new(kind, self.span_from(start)));
+            return Ok((
+                Token::new(kind, self.span_from(start)),
+                preceded_by_whitespace,
+            ));
         }
     }
 
