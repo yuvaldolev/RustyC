@@ -64,6 +64,10 @@ impl CodeGenerator {
             NodeKind::Subtraction => Self::emit_instruction("sub x0, x0, x1"),
             NodeKind::Multiplication => Self::emit_instruction("mul x0, x0, x1"),
             NodeKind::Division => Self::emit_instruction("sdiv x0, x0, x1"),
+            NodeKind::Equality => Self::generate_comparison("eq"),
+            NodeKind::NotEqual => Self::generate_comparison("ne"),
+            NodeKind::LessThan => Self::generate_comparison("lt"),
+            NodeKind::LessThanOrEqual => Self::generate_comparison("le"),
             _ => {
                 return Err(Diagnostic::new_error(
                     rustyc_diagnostics::Error::InvalidExpression,
@@ -73,6 +77,11 @@ impl CodeGenerator {
         }
 
         Ok(())
+    }
+
+    fn generate_comparison(condition: &str) {
+        Self::emit_instruction("cmp x0, x1");
+        Self::emit_instruction(format!("cset x0, {condition}").as_str());
     }
 
     fn generate_epilogue() {
