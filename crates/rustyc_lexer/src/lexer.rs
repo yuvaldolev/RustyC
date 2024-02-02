@@ -79,7 +79,7 @@ impl<'a> Lexer<'a> {
             self.position += raw_token.get_length();
 
             let kind = match raw_token.get_kind() {
-                RawTokenKind::Equals => TokenKind::Equals,
+                RawTokenKind::Equal => TokenKind::Equal,
                 RawTokenKind::LessThan => TokenKind::LessThan,
                 RawTokenKind::GreaterThan => TokenKind::GreaterThan,
                 RawTokenKind::Bang => TokenKind::Not,

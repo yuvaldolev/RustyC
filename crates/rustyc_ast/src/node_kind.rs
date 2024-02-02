@@ -2,10 +2,14 @@ use crate::NumberNode;
 
 #[derive(Debug)]
 pub enum NodeKind {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Negate,
+    Equality,
+    NotEqual,
+    LessThan,
+    LessThanOrEqual,
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Negation,
     Number(NumberNode),
 }

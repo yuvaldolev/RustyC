@@ -43,6 +43,70 @@ impl Parser {
     }
 
     fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+        self.parse_equality()
+    }
+
+    fn parse_equality(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+        let low = self.token.get_span().clone();
+
+        let mut node = self.parse_relational()?;
+
+        loop {
+            if self.eat_equal_equal() {
+                let right = self.parse_relational()?;
+                node = self.new_binary_node(NodeKind::Equality, &low, node, right);
+                continue;
+            }
+
+            if self.eat_not_equal() {
+                let right = self.parse_relational()?;
+                node = self.new_binary_node(NodeKind::NotEqual, &low, node, right);
+                continue;
+            }
+
+            break;
+        }
+
+        Ok(node)
+    }
+
+    fn parse_relational(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+        let low = self.token.get_span().clone();
+
+        let mut node = self.parse_addition()?;
+
+        loop {
+            if self.eat_less_than() {
+                let right = self.parse_addition()?;
+                node = self.new_binary_node(NodeKind::LessThan, &low, node, right);
+                continue;
+            }
+
+            if self.eat_less_equal() {
+                let right = self.parse_addition()?;
+                node = self.new_binary_node(NodeKind::LessThanOrEqual, &low, node, right);
+                continue;
+            }
+
+            if self.eat_greater_than() {
+                let left = self.parse_addition()?;
+                node = self.new_binary_node(NodeKind::LessThan, &low, left, node);
+                continue;
+            }
+
+            if self.eat_greater_equal() {
+                let left = self.parse_addition()?;
+                node = self.new_binary_node(NodeKind::LessThanOrEqual, &low, left, node);
+                continue;
+            }
+
+            break;
+        }
+
+        Ok(node)
+    }
+
+    fn parse_addition(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
         let low = self.token.get_span().clone();
 
         let mut node = self.parse_multiplication()?;
@@ -50,13 +114,13 @@ impl Parser {
         loop {
             if self.eat_plus() {
                 let right = self.parse_multiplication()?;
-                node = self.new_binary_node(NodeKind::Add, &low, node, right);
+                node = self.new_binary_node(NodeKind::Addition, &low, node, right);
                 continue;
             }
 
             if self.eat_minus() {
                 let right = self.parse_multiplication()?;
-                node = self.new_binary_node(NodeKind::Subtract, &low, node, right);
+                node = self.new_binary_node(NodeKind::Subtraction, &low, node, right);
                 continue;
             }
 
@@ -74,13 +138,13 @@ impl Parser {
         loop {
             if self.eat_star() {
                 let right = self.parse_unary()?;
-                node = self.new_binary_node(NodeKind::Multiply, &low, node, right);
+                node = self.new_binary_node(NodeKind::Multiplication, &low, node, right);
                 continue;
             }
 
             if self.eat_slash() {
                 let right = self.parse_unary()?;
-                node = self.new_binary_node(NodeKind::Divide, &low, node, right);
+                node = self.new_binary_node(NodeKind::Division, &low, node, right);
                 continue;
             }
 
@@ -99,7 +163,7 @@ impl Parser {
 
         if self.eat_minus() {
             let left = self.parse_unary()?;
-            return Ok(self.new_unary_node(NodeKind::Negate, &low, left));
+            return Ok(self.new_unary_node(NodeKind::Negation, &low, left));
         }
 
         self.parse_primary()
@@ -182,58 +246,52 @@ impl Parser {
         )
     }
 
+    fn eat_equal_equal(&mut self) -> bool {
+        self.eat(TokenKind::EqualEqual)
+    }
+
+    fn eat_not_equal(&mut self) -> bool {
+        self.eat(TokenKind::NotEqual)
+    }
+
+    fn eat_less_than(&mut self) -> bool {
+        self.eat(TokenKind::LessThan)
+    }
+
+    fn eat_less_equal(&mut self) -> bool {
+        self.eat(TokenKind::LessEqual)
+    }
+
+    fn eat_greater_than(&mut self) -> bool {
+        self.eat(TokenKind::GreaterThan)
+    }
+
+    fn eat_greater_equal(&mut self) -> bool {
+        self.eat(TokenKind::GreaterEqual)
+    }
+
     fn eat_plus(&mut self) -> bool {
-        if self.check_plus() {
-            self.bump();
-            true
-        } else {
-            false
-        }
+        self.eat_binary_operator(BinaryOperatorToken::Plus)
     }
 
     fn eat_minus(&mut self) -> bool {
-        if self.check_minus() {
-            self.bump();
-            true
-        } else {
-            false
-        }
+        self.eat_binary_operator(BinaryOperatorToken::Minus)
     }
 
     fn eat_star(&mut self) -> bool {
-        if self.check_star() {
-            self.bump();
-            true
-        } else {
-            false
-        }
+        self.eat_binary_operator(BinaryOperatorToken::Star)
     }
 
     fn eat_slash(&mut self) -> bool {
-        if self.check_slash() {
-            self.bump();
-            true
-        } else {
-            false
-        }
+        self.eat_binary_operator(BinaryOperatorToken::Slash)
     }
 
     fn eat_open_parenthesis(&mut self) -> bool {
-        if self.check_open_parenthesis() {
-            self.bump();
-            true
-        } else {
-            false
-        }
+        self.eat_open_delimiter(DelimiterToken::Parenthesis)
     }
 
     fn eat_close_parenthesis(&mut self) -> bool {
-        if self.check_close_parenthesis() {
-            self.bump();
-            true
-        } else {
-            false
-        }
+        self.eat_close_delimiter(DelimiterToken::Parenthesis)
     }
 
     fn eat_number(&mut self) -> Option<NumberToken> {
@@ -247,40 +305,25 @@ impl Parser {
         }
     }
 
-    fn check_plus(&mut self) -> bool {
-        self.check_binary_operator(BinaryOperatorToken::Plus)
+    fn eat_binary_operator(&mut self, token: BinaryOperatorToken) -> bool {
+        self.eat(TokenKind::BinaryOperator(token))
     }
 
-    fn check_minus(&mut self) -> bool {
-        self.check_binary_operator(BinaryOperatorToken::Minus)
+    fn eat_open_delimiter(&mut self, token: DelimiterToken) -> bool {
+        self.eat(TokenKind::OpenDelimiter(token))
     }
 
-    fn check_star(&mut self) -> bool {
-        self.check_binary_operator(BinaryOperatorToken::Star)
+    fn eat_close_delimiter(&mut self, token: DelimiterToken) -> bool {
+        self.eat(TokenKind::CloseDelimiter(token))
     }
 
-    fn check_slash(&mut self) -> bool {
-        self.check_binary_operator(BinaryOperatorToken::Slash)
-    }
-
-    fn check_open_parenthesis(&mut self) -> bool {
-        self.check_open_delimiter(DelimiterToken::Parenthesis)
-    }
-
-    fn check_close_parenthesis(&mut self) -> bool {
-        self.check_close_delimiter(DelimiterToken::Parenthesis)
-    }
-
-    fn check_binary_operator(&mut self, token: BinaryOperatorToken) -> bool {
-        self.check(TokenKind::BinaryOperator(token))
-    }
-
-    fn check_open_delimiter(&mut self, token: DelimiterToken) -> bool {
-        self.check(TokenKind::OpenDelimiter(token))
-    }
-
-    fn check_close_delimiter(&mut self, token: DelimiterToken) -> bool {
-        self.check(TokenKind::CloseDelimiter(token))
+    fn eat(&mut self, kind: TokenKind) -> bool {
+        if self.check(kind) {
+            self.bump();
+            true
+        } else {
+            false
+        }
     }
 
     fn check_eof(&mut self) -> bool {

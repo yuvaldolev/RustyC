@@ -54,6 +54,26 @@ assert 10 "-10+20"
 assert 10 "- -10"
 assert 10 "- - +10"
 assert 8 "-(5 + 3 * 44) + 145"
+
+assert 0 "0 == 1"
+assert 1 "42==42"
+
+assert 1 "0!=1"
+assert 0 "42!=42"
+
+assert 1 "0<1"
+assert 0 "1<1"
+assert 0 "2           < 1"
+assert 1 "0<=1"
+assert 1 "1<=1"
+assert 0 "2<=1"
+
+assert 1 "1>0"
+assert 0 "1 >  1"
+assert 0 "1>2"
+assert 1 "1>=0"
+assert 1 "1>=1"
+assert 0 "1>=2"
 popd >/dev/null
 
 if [[ 1 == $RESULT ]]; then

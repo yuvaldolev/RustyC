@@ -27,20 +27,20 @@ impl Token {
 
     pub fn glue(&self, joint: &Self) -> Option<Self> {
         let kind = match self.kind {
-            TokenKind::Equals => match joint.kind {
-                TokenKind::Equals => TokenKind::EqualsEquals,
+            TokenKind::Equal => match joint.kind {
+                TokenKind::Equal => TokenKind::EqualEqual,
                 _ => return None,
             },
             TokenKind::LessThan => match joint.kind {
-                TokenKind::Equals => TokenKind::LessEquals,
+                TokenKind::Equal => TokenKind::LessEqual,
                 _ => return None,
             },
             TokenKind::GreaterThan => match joint.kind {
-                TokenKind::Equals => TokenKind::GreaterEquals,
+                TokenKind::Equal => TokenKind::GreaterEqual,
                 _ => return None,
             },
             TokenKind::Not => match joint.kind {
-                TokenKind::Equals => TokenKind::NotEquals,
+                TokenKind::Equal => TokenKind::NotEqual,
                 _ => return None,
             },
             _ => return None,

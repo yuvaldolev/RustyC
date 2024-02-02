@@ -31,7 +31,7 @@ impl CodeGenerator {
                 Self::emit_instruction(format!("mov x0, #{}", number.get_value()).as_str());
                 return Ok(());
             }
-            NodeKind::Negate => {
+            NodeKind::Negation => {
                 let left = node.get_left().ok_or(Diagnostic::new_error(
                     rustyc_diagnostics::Error::InvalidExpression,
                     node.get_span().clone(),
@@ -60,10 +60,10 @@ impl CodeGenerator {
         Self::generate_pop("x1");
 
         match node.get_kind() {
-            NodeKind::Add => Self::emit_instruction("add x0, x0, x1"),
-            NodeKind::Subtract => Self::emit_instruction("sub x0, x0, x1"),
-            NodeKind::Multiply => Self::emit_instruction("mul x0, x0, x1"),
-            NodeKind::Divide => Self::emit_instruction("sdiv x0, x0, x1"),
+            NodeKind::Addition => Self::emit_instruction("add x0, x0, x1"),
+            NodeKind::Subtraction => Self::emit_instruction("sub x0, x0, x1"),
+            NodeKind::Multiplication => Self::emit_instruction("mul x0, x0, x1"),
+            NodeKind::Division => Self::emit_instruction("sdiv x0, x0, x1"),
             _ => {
                 return Err(Diagnostic::new_error(
                     rustyc_diagnostics::Error::InvalidExpression,
