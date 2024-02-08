@@ -93,6 +93,7 @@ impl<'a> Lexer<'a> {
                 RawTokenKind::CloseParenthesis => {
                     TokenKind::CloseDelimiter(DelimiterToken::Parenthesis)
                 }
+                RawTokenKind::Semicolon => TokenKind::Semicolon,
                 RawTokenKind::Number => self.lex_number(start)?,
                 RawTokenKind::Whitespace => {
                     preceded_by_whitespace = true;

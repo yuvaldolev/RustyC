@@ -11,5 +11,6 @@ pub enum NodeKind {
     Multiplication,
     Division,
     Negation,
+    ExpressionStatement,
     Number(NumberNode),
 }

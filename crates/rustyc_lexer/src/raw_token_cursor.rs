@@ -41,6 +41,7 @@ impl<'a> RawTokenCursor<'a> {
             '/' => RawTokenKind::Slash,
             '(' => RawTokenKind::OpenParenthesis,
             ')' => RawTokenKind::CloseParenthesis,
+            ';' => RawTokenKind::Semicolon,
             _ => RawTokenKind::Unknown,
         };
 

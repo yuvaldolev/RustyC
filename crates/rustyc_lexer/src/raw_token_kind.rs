@@ -9,6 +9,7 @@ pub enum RawTokenKind {
     Slash,
     OpenParenthesis,
     CloseParenthesis,
+    Semicolon,
     Number,
     Whitespace,
     Eof,

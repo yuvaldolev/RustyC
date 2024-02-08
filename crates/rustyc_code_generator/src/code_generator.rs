@@ -2,17 +2,21 @@ use rustyc_ast::{Node, NodeKind};
 use rustyc_diagnostics::Diagnostic;
 
 pub struct CodeGenerator {
-    ast: Box<Node>,
+    ast: Vec<Box<Node>>,
 }
 
 impl CodeGenerator {
-    pub fn new(ast: Box<Node>) -> Self {
+    pub fn new(ast: Vec<Box<Node>>) -> Self {
         Self { ast }
     }
 
     pub fn generate(&self) -> rustyc_diagnostics::Result<()> {
         Self::generate_prologue();
-        Self::generate_expression(&self.ast)?;
+
+        for statement in self.ast.iter() {
+            Self::generate_statement(statement)?;
+        }
+
         Self::generate_epilogue();
 
         Ok(())
@@ -23,6 +27,26 @@ impl CodeGenerator {
         println!();
         println!(".global _main");
         println!("_main:");
+    }
+
+    fn generate_statement(node: &Node) -> rustyc_diagnostics::Result<()> {
+        match node.get_kind() {
+            NodeKind::ExpressionStatement => {
+                let left = node.get_left().ok_or(Diagnostic::new_error(
+                    rustyc_diagnostics::Error::InvalidExpressionStatement,
+                    node.get_span().clone(),
+                ))?;
+                Self::generate_expression(left)?;
+            }
+            _ => {
+                return Err(Diagnostic::new_error(
+                    rustyc_diagnostics::Error::InvalidStatement,
+                    node.get_span().clone(),
+                ));
+            }
+        }
+
+        Ok(())
     }
 
     fn generate_expression(node: &Node) -> rustyc_diagnostics::Result<()> {
@@ -72,7 +96,7 @@ impl CodeGenerator {
                 return Err(Diagnostic::new_error(
                     rustyc_diagnostics::Error::InvalidExpression,
                     node.get_span().clone(),
-                ))
+                ));
             }
         }
 

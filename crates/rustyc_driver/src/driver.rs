@@ -32,9 +32,9 @@ impl Driver {
         let tokens = lexer.lex()?;
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.parse()?;
+        let ast = parser.parse()?;
 
-        let code_generator = CodeGenerator::new(expression);
+        let code_generator = CodeGenerator::new(ast);
         code_generator.generate()?;
 
         Ok(())

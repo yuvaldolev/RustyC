@@ -30,16 +30,33 @@ impl Parser {
         parser
     }
 
-    pub fn parse(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
-        let expression = self.parse_expression()?;
-        self.expect_eof()?;
+    pub fn parse(&mut self) -> rustyc_diagnostics::Result<Vec<Box<Node>>> {
+        let mut statements: Vec<Box<Node>> = Vec::new();
 
-        Ok(expression)
+        while !self.is_eof() {
+            let statement = self.parse_statement()?;
+            statements.push(statement);
+        }
+
+        Ok(statements)
     }
 
     fn bump(&mut self) {
         self.previous_token = mem::replace(&mut self.token, self.cursor.next());
         self.expected_tokens.clear();
+    }
+
+    fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+        self.parse_expression_statement()
+    }
+
+    fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+        let low = self.token.get_span().clone();
+
+        let left = self.parse_expression()?;
+        self.expect_semicolon()?;
+
+        Ok(self.new_unary_node(NodeKind::ExpressionStatement, &low, left))
     }
 
     fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
@@ -225,14 +242,13 @@ impl Parser {
         }
     }
 
-    fn expect_eof(&mut self) -> rustyc_diagnostics::Result<()> {
-        if self.check_eof() {
+    fn expect_semicolon(&mut self) -> rustyc_diagnostics::Result<()> {
+        self.expected_tokens.clear();
+
+        if self.eat_semicolon() {
             Ok(())
         } else {
-            Err(Diagnostic::new_error(
-                rustyc_diagnostics::Error::EofExpected,
-                self.token.get_span().clone(),
-            ))
+            Err(self.unexpected_token())
         }
     }
 
@@ -294,6 +310,10 @@ impl Parser {
         self.eat_close_delimiter(DelimiterToken::Parenthesis)
     }
 
+    fn eat_semicolon(&mut self) -> bool {
+        self.eat(TokenKind::Semicolon)
+    }
+
     fn eat_number(&mut self) -> Option<NumberToken> {
         let kind = self.token.get_kind().clone();
 
@@ -326,14 +346,14 @@ impl Parser {
         }
     }
 
-    fn check_eof(&mut self) -> bool {
-        self.check(TokenKind::Eof)
-    }
-
     fn check(&mut self, kind: TokenKind) -> bool {
         let result = (*self.token.get_kind()) == kind;
         self.expected_tokens.insert(kind);
 
         result
+    }
+
+    fn is_eof(&self) -> bool {
+        TokenKind::Eof == (*self.token.get_kind())
     }
 }

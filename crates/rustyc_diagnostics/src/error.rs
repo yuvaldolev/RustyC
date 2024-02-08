@@ -21,4 +21,10 @@ pub enum Error {
 
     #[error("invalid expression")]
     InvalidExpression,
+
+    #[error("invalid statement")]
+    InvalidStatement,
+
+    #[error("invalid expression statement")]
+    InvalidExpressionStatement,
 }
