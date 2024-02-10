@@ -10,8 +10,11 @@ pub enum Error {
     #[error("unknown token start")]
     UnknownTokenStart,
 
+    #[error("unexpected token '{0}', expected: '{1}'")]
+    UnexpectedTokenSingle(TokenKind, TokenKind),
+
     #[error("unexpected token '{0}', expected one of: {1}")]
-    UnexpectedToken(TokenKind, TokenKindSet),
+    UnexpectedTokenMultiple(TokenKind, TokenKindSet),
 
     #[error("expected an expression")]
     ExpressionExpected,

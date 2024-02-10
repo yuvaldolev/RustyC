@@ -274,13 +274,19 @@ impl Parser {
     }
 
     fn unexpected_token(&self) -> Diagnostic {
-        Diagnostic::new_error(
-            rustyc_diagnostics::Error::UnexpectedToken(
+        let error = if self.expected_tokens.len() > 1 {
+            rustyc_diagnostics::Error::UnexpectedTokenMultiple(
                 self.token.get_kind().clone(),
                 self.expected_tokens.clone(),
-            ),
-            self.token.get_span().clone(),
-        )
+            )
+        } else {
+            rustyc_diagnostics::Error::UnexpectedTokenSingle(
+                self.token.get_kind().clone(),
+                self.expected_tokens.first().clone(),
+            )
+        };
+
+        Diagnostic::new_error(error, self.token.get_span().clone())
     }
 
     fn eat_equal(&mut self) -> bool {

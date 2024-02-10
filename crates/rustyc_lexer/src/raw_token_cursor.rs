@@ -31,7 +31,10 @@ impl<'a> RawTokenCursor<'a> {
                 self.eat_number();
                 RawTokenKind::Number
             }
-            c if c.is_ascii_lowercase() => RawTokenKind::Identifier,
+            c if Self::is_identifier_start(c) => {
+                self.eat_identifier();
+                RawTokenKind::Identifier
+            }
             '=' => RawTokenKind::Equal,
             '<' => RawTokenKind::LessThan,
             '>' => RawTokenKind::GreaterThan,
@@ -50,6 +53,14 @@ impl<'a> RawTokenCursor<'a> {
         self.reset_position_within_token();
 
         token
+    }
+
+    fn is_identifier_start(c: char) -> bool {
+        c.is_ascii_alphabetic() || ('_' == c)
+    }
+
+    fn is_identifier_continuation(c: char) -> bool {
+        Self::is_identifier_start(c) || c.is_ascii_digit()
     }
 
     fn first(&self) -> char {
@@ -78,6 +89,10 @@ impl<'a> RawTokenCursor<'a> {
 
     fn eat_number(&mut self) {
         self.eat_while(|c| c.is_ascii_digit());
+    }
+
+    fn eat_identifier(&mut self) {
+        self.eat_while(Self::is_identifier_continuation)
     }
 
     fn eat_while(&mut self, predicate: impl Fn(char) -> bool) {

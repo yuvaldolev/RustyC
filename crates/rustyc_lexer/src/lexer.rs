@@ -132,7 +132,7 @@ impl<'a> Lexer<'a> {
 
     fn lex_identifier(&self, start: usize) -> TokenKind {
         let source = self.source_from(start);
-        TokenKind::Identifier(IdentifierToken::new(source.chars().next().unwrap()))
+        TokenKind::Identifier(IdentifierToken::new(source.to_owned()))
     }
 
     fn source_index(&self, position: usize) -> usize {
