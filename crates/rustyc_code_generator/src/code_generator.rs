@@ -1,4 +1,4 @@
-use rustyc_ast::{Node, NodeKind};
+use rustyc_ast::{Node, NodeKind, VariableNode};
 use rustyc_diagnostics::Diagnostic;
 
 pub struct CodeGenerator {
@@ -27,6 +27,10 @@ impl CodeGenerator {
         println!();
         println!(".global _main");
         println!("_main:");
+
+        Self::generate_push("fp");
+        Self::emit_instruction("mov fp, sp");
+        Self::emit_instruction("sub sp, sp, #208");
     }
 
     fn generate_statement(node: &Node) -> rustyc_diagnostics::Result<()> {
@@ -49,19 +53,51 @@ impl CodeGenerator {
         Ok(())
     }
 
+    fn generate_epilogue() {
+        Self::emit_instruction("mov sp, fp");
+        Self::generate_pop("fp");
+        Self::emit_instruction("ret");
+    }
+
     fn generate_expression(node: &Node) -> rustyc_diagnostics::Result<()> {
         match node.get_kind() {
             NodeKind::Number(number) => {
                 Self::emit_instruction(format!("mov x0, #{}", number.get_value()).as_str());
                 return Ok(());
             }
+            NodeKind::Variable(variable) => {
+                Self::generate_variable_read(variable);
+                return Ok(());
+            }
             NodeKind::Negation => {
                 let left = node.get_left().ok_or(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::InvalidExpression,
+                    rustyc_diagnostics::Error::InvalidNegationExpression,
                     node.get_span().clone(),
                 ))?;
                 Self::generate_expression(left)?;
                 Self::emit_instruction("neg x0, x0");
+                return Ok(());
+            }
+            NodeKind::Assignment => {
+                let left = node.get_left().ok_or(Diagnostic::new_error(
+                    rustyc_diagnostics::Error::InvalidAssignmentExpression,
+                    node.get_span().clone(),
+                ))?;
+                let NodeKind::Variable(left_variable) = left.get_kind() else {
+                    return Err(Diagnostic::new_error(
+                        rustyc_diagnostics::Error::InvalidAssignmentExpression,
+                        left.get_span().clone(),
+                    ));
+                };
+
+                let right = node.get_right().ok_or(Diagnostic::new_error(
+                    rustyc_diagnostics::Error::InvalidAssignmentExpression,
+                    node.get_span().clone(),
+                ))?;
+                Self::generate_expression(right)?;
+
+                Self::generate_variable_write(left_variable);
+
                 return Ok(());
             }
             _ => {}
@@ -108,19 +144,47 @@ impl CodeGenerator {
         Self::emit_instruction(format!("cset x0, {condition}").as_str());
     }
 
-    fn generate_epilogue() {
-        Self::emit_instruction("ret");
+    fn generate_variable_read(variable: &VariableNode) {
+        Self::emit_instruction(
+            format!(
+                "ldr x0, [fp, #-{}]",
+                Self::calculate_variable_offset(variable)
+            )
+            .as_str(),
+        );
+    }
+
+    fn generate_variable_write(variable: &VariableNode) {
+        Self::emit_instruction(
+            format!(
+                "str x0, [fp, #-{}]",
+                Self::calculate_variable_offset(variable)
+            )
+            .as_str(),
+        );
     }
 
     fn generate_push(register: &str) {
-        Self::emit_instruction(format!("stp {register}, xzr, [sp, #-0x10]!").as_str());
+        Self::generate_push_pair(register, "xzr");
+    }
+
+    fn generate_push_pair(register1: &str, register2: &str) {
+        Self::emit_instruction(format!("stp {register1}, {register2}, [sp, #-0x10]!").as_str());
     }
 
     fn generate_pop(register: &str) {
-        Self::emit_instruction(format!("ldp {register}, xzr, [sp], #0x10").as_str());
+        Self::generate_pop_pair(register, "xzr");
+    }
+
+    fn generate_pop_pair(register1: &str, register2: &str) {
+        Self::emit_instruction(format!("ldp {register1}, {register2}, [sp], #0x10").as_str());
     }
 
     fn emit_instruction(instruction: &str) {
         println!("  {instruction}");
+    }
+
+    fn calculate_variable_offset(variable: &VariableNode) -> isize {
+        8 * (((variable.get_name() as u8) - b'a' + 1) as isize)
     }
 }

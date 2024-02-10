@@ -2,7 +2,9 @@ use std::mem;
 
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
-use rustyc_token::{BinaryOperatorToken, DelimiterToken, NumberToken, Token, TokenKind};
+use rustyc_token::{
+    BinaryOperatorToken, DelimiterToken, IdentifierToken, NumberToken, Token, TokenKind,
+};
 
 use crate::{raw_token_cursor::RawTokenCursor, raw_token_kind::RawTokenKind};
 
@@ -95,6 +97,7 @@ impl<'a> Lexer<'a> {
                 }
                 RawTokenKind::Semicolon => TokenKind::Semicolon,
                 RawTokenKind::Number => self.lex_number(start)?,
+                RawTokenKind::Identifier => self.lex_identifier(start),
                 RawTokenKind::Whitespace => {
                     preceded_by_whitespace = true;
                     continue;
@@ -115,7 +118,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_number(&mut self, start: usize) -> rustyc_diagnostics::Result<TokenKind> {
+    fn lex_number(&self, start: usize) -> rustyc_diagnostics::Result<TokenKind> {
         let source = self.source_from(start);
         let value = source.parse().map_err(|e| {
             Diagnostic::new_error(
@@ -125,6 +128,11 @@ impl<'a> Lexer<'a> {
         })?;
 
         Ok(TokenKind::Number(NumberToken::new(value)))
+    }
+
+    fn lex_identifier(&self, start: usize) -> TokenKind {
+        let source = self.source_from(start);
+        TokenKind::Identifier(IdentifierToken::new(source.chars().next().unwrap()))
     }
 
     fn source_index(&self, position: usize) -> usize {

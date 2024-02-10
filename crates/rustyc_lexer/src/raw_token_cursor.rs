@@ -31,6 +31,7 @@ impl<'a> RawTokenCursor<'a> {
                 self.eat_number();
                 RawTokenKind::Number
             }
+            c if c.is_ascii_lowercase() => RawTokenKind::Identifier,
             '=' => RawTokenKind::Equal,
             '<' => RawTokenKind::LessThan,
             '>' => RawTokenKind::GreaterThan,

@@ -11,6 +11,7 @@ pub enum RawTokenKind {
     CloseParenthesis,
     Semicolon,
     Number,
+    Identifier,
     Whitespace,
     Eof,
     Unknown,

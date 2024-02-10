@@ -1,10 +1,11 @@
 use std::mem;
 
-use rustyc_ast::{Node, NodeKind, NumberNode};
+use rustyc_ast::{Node, NodeKind, NumberNode, VariableNode};
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
 use rustyc_token::{
-    BinaryOperatorToken, DelimiterToken, NumberToken, Token, TokenKind, TokenKindSet,
+    BinaryOperatorToken, DelimiterToken, IdentifierToken, NumberToken, Token, TokenKind,
+    TokenKindSet,
 };
 
 use crate::token_cursor::TokenCursor;
@@ -60,7 +61,20 @@ impl Parser {
     }
 
     fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
-        self.parse_equality()
+        self.parse_assignment()
+    }
+
+    fn parse_assignment(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+        let low = self.token.get_span().clone();
+
+        let mut node = self.parse_equality()?;
+
+        if self.eat_equal() {
+            let right = self.parse_assignment()?;
+            node = self.new_binary_node(NodeKind::Assignment, &low, node, right);
+        }
+
+        Ok(node)
     }
 
     fn parse_equality(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
@@ -195,6 +209,13 @@ impl Parser {
             return Ok(node);
         }
 
+        if let Some(identifier) = self.eat_identifier() {
+            return Ok(self.new_node(
+                NodeKind::Variable(VariableNode::new(identifier.get_name())),
+                &low,
+            ));
+        }
+
         if let Some(number) = self.eat_number() {
             return Ok(self.new_node(NodeKind::Number(NumberNode::new(number.get_value())), &low));
         }
@@ -262,6 +283,10 @@ impl Parser {
         )
     }
 
+    fn eat_equal(&mut self) -> bool {
+        self.eat(TokenKind::Equal)
+    }
+
     fn eat_equal_equal(&mut self) -> bool {
         self.eat(TokenKind::EqualEqual)
     }
@@ -312,6 +337,17 @@ impl Parser {
 
     fn eat_semicolon(&mut self) -> bool {
         self.eat(TokenKind::Semicolon)
+    }
+
+    fn eat_identifier(&mut self) -> Option<IdentifierToken> {
+        let kind = self.token.get_kind().clone();
+
+        if let TokenKind::Identifier(token) = kind {
+            self.bump();
+            Some(token)
+        } else {
+            None
+        }
     }
 
     fn eat_number(&mut self) -> Option<NumberToken> {

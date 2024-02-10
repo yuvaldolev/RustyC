@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{BinaryOperatorToken, DelimiterToken, NumberToken};
+use crate::{BinaryOperatorToken, DelimiterToken, IdentifierToken, NumberToken};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TokenKind {
@@ -14,6 +14,7 @@ pub enum TokenKind {
     NotEqual,
     Semicolon,
     Number(NumberToken),
+    Identifier(IdentifierToken),
     BinaryOperator(BinaryOperatorToken),
     OpenDelimiter(DelimiterToken),
     CloseDelimiter(DelimiterToken),
@@ -33,6 +34,7 @@ impl fmt::Display for TokenKind {
             Self::NotEqual => write!(f, "!="),
             Self::Semicolon => write!(f, ";"),
             Self::Number(token) => write!(f, "{}", token.get_value()),
+            Self::Identifier(token) => write!(f, "{}", token.get_name()),
             Self::BinaryOperator(BinaryOperatorToken::Plus) => write!(f, "+"),
             Self::BinaryOperator(BinaryOperatorToken::Minus) => write!(f, "-"),
             Self::BinaryOperator(BinaryOperatorToken::Star) => write!(f, "*"),

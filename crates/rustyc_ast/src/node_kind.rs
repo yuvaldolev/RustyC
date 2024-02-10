@@ -1,7 +1,8 @@
-use crate::NumberNode;
+use crate::{NumberNode, VariableNode};
 
 #[derive(Debug)]
 pub enum NodeKind {
+    Assignment,
     Equality,
     NotEqual,
     LessThan,
@@ -13,4 +14,5 @@ pub enum NodeKind {
     Negation,
     ExpressionStatement,
     Number(NumberNode),
+    Variable(VariableNode),
 }

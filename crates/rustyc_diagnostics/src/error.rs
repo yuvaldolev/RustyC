@@ -19,12 +19,18 @@ pub enum Error {
     #[error("parsing completed without reaching EOF")]
     EofExpected,
 
-    #[error("invalid expression")]
-    InvalidExpression,
-
     #[error("invalid statement")]
     InvalidStatement,
 
+    #[error("invalid expression")]
+    InvalidExpression,
+
     #[error("invalid expression statement")]
     InvalidExpressionStatement,
+
+    #[error("invalid negation expression")]
+    InvalidNegationExpression,
+
+    #[error("invalid assignment expression")]
+    InvalidAssignmentExpression,
 }
