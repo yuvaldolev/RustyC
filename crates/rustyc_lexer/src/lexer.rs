@@ -2,9 +2,7 @@ use std::mem;
 
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
-use rustyc_token::{
-    BinaryOperatorToken, DelimiterToken, IdentifierToken, NumberToken, Token, TokenKind,
-};
+use rustyc_token::{BinaryOperatorToken, DelimiterToken, Token, TokenKind};
 
 use crate::{raw_token_cursor::RawTokenCursor, raw_token_kind::RawTokenKind};
 
@@ -127,12 +125,12 @@ impl<'a> Lexer<'a> {
             )
         })?;
 
-        Ok(TokenKind::Number(NumberToken::new(value)))
+        Ok(TokenKind::Number(value))
     }
 
     fn lex_identifier(&self, start: usize) -> TokenKind {
         let source = self.source_from(start);
-        TokenKind::Identifier(IdentifierToken::new(source.to_owned()))
+        TokenKind::Identifier(source.to_owned())
     }
 
     fn source_index(&self, position: usize) -> usize {

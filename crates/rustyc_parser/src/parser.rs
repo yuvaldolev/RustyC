@@ -1,12 +1,9 @@
 use std::mem;
 
-use rustyc_ast::{Node, NodeKind, NumberNode, VariableNode};
+use rustyc_ast::{Node, NodeKind};
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
-use rustyc_token::{
-    BinaryOperatorToken, DelimiterToken, IdentifierToken, NumberToken, Token, TokenKind,
-    TokenKindSet,
-};
+use rustyc_token::{BinaryOperatorToken, DelimiterToken, Token, TokenKind, TokenKindSet};
 
 use crate::token_cursor::TokenCursor;
 
@@ -211,13 +208,13 @@ impl Parser {
 
         if let Some(identifier) = self.eat_identifier() {
             return Ok(self.new_node(
-                NodeKind::Variable(VariableNode::new(identifier.get_name())),
+                NodeKind::Variable(identifier.chars().next().unwrap()), // TODO: Update
                 &low,
             ));
         }
 
         if let Some(number) = self.eat_number() {
-            return Ok(self.new_node(NodeKind::Number(NumberNode::new(number.get_value())), &low));
+            return Ok(self.new_node(NodeKind::Number(number), &low));
         }
 
         Err(Diagnostic::new_error(
@@ -345,23 +342,23 @@ impl Parser {
         self.eat(TokenKind::Semicolon)
     }
 
-    fn eat_identifier(&mut self) -> Option<IdentifierToken> {
+    fn eat_identifier(&mut self) -> Option<String> {
         let kind = self.token.get_kind().clone();
 
-        if let TokenKind::Identifier(token) = kind {
+        if let TokenKind::Identifier(name) = kind {
             self.bump();
-            Some(token)
+            Some(name)
         } else {
             None
         }
     }
 
-    fn eat_number(&mut self) -> Option<NumberToken> {
+    fn eat_number(&mut self) -> Option<u64> {
         let kind = self.token.get_kind().clone();
 
-        if let TokenKind::Number(token) = kind {
+        if let TokenKind::Number(value) = kind {
             self.bump();
-            Some(token)
+            Some(value)
         } else {
             None
         }

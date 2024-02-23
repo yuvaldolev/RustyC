@@ -1,4 +1,4 @@
-use rustyc_ast::{Node, NodeKind, VariableNode};
+use rustyc_ast::{Node, NodeKind};
 use rustyc_diagnostics::Diagnostic;
 
 pub struct CodeGenerator {
@@ -62,11 +62,11 @@ impl CodeGenerator {
     fn generate_expression(node: &Node) -> rustyc_diagnostics::Result<()> {
         match node.get_kind() {
             NodeKind::Number(number) => {
-                Self::emit_instruction(format!("mov x0, #{}", number.get_value()).as_str());
+                Self::emit_instruction(format!("mov x0, #{}", number).as_str());
                 return Ok(());
             }
             NodeKind::Variable(variable) => {
-                Self::generate_variable_read(variable);
+                Self::generate_variable_read(*variable);
                 return Ok(());
             }
             NodeKind::Negation => {
@@ -96,7 +96,7 @@ impl CodeGenerator {
                 ))?;
                 Self::generate_expression(right)?;
 
-                Self::generate_variable_write(left_variable);
+                Self::generate_variable_write(*left_variable);
 
                 return Ok(());
             }
@@ -144,7 +144,7 @@ impl CodeGenerator {
         Self::emit_instruction(format!("cset x0, {condition}").as_str());
     }
 
-    fn generate_variable_read(variable: &VariableNode) {
+    fn generate_variable_read(variable: char) {
         Self::emit_instruction(
             format!(
                 "ldr x0, [fp, #-{}]",
@@ -154,7 +154,7 @@ impl CodeGenerator {
         );
     }
 
-    fn generate_variable_write(variable: &VariableNode) {
+    fn generate_variable_write(variable: char) {
         Self::emit_instruction(
             format!(
                 "str x0, [fp, #-{}]",
@@ -184,7 +184,7 @@ impl CodeGenerator {
         println!("  {instruction}");
     }
 
-    fn calculate_variable_offset(variable: &VariableNode) -> isize {
-        8 * (((variable.get_name() as u8) - b'a' + 1) as isize)
+    fn calculate_variable_offset(variable: char) -> isize {
+        8 * (((variable as u8) - b'a' + 1) as isize)
     }
 }

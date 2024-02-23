@@ -1,5 +1,3 @@
-use crate::{NumberNode, VariableNode};
-
 #[derive(Debug)]
 pub enum NodeKind {
     Assignment,
@@ -13,6 +11,6 @@ pub enum NodeKind {
     Division,
     Negation,
     ExpressionStatement,
-    Number(NumberNode),
-    Variable(VariableNode),
+    Number(u64),
+    Variable(char),
 }
