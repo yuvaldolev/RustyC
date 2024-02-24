@@ -1,7 +1,8 @@
 use std::mem;
 
 use rustyc_ast::{
-    BinaryOperator, Block, Expression, ExpressionKind, Statement, StatementKind, UnaryOperator,
+    BinaryOperator, Block, Expression, ExpressionKind, FunctionItem, Item, ItemKind, Statement,
+    StatementKind, UnaryOperator,
 };
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
@@ -14,6 +15,7 @@ pub struct Parser {
     token: Token,
     previous_token: Token,
     expected_tokens: TokenKindSet,
+    local_variables: Vec<String>,
 }
 
 impl Parser {
@@ -23,6 +25,7 @@ impl Parser {
             token: Token::new_eof(),
             previous_token: Token::new_eof(),
             expected_tokens: TokenKindSet::new(),
+            local_variables: Vec::new(),
         };
 
         parser.bump();
@@ -30,8 +33,23 @@ impl Parser {
         parser
     }
 
-    pub fn parse(mut self) -> rustyc_diagnostics::Result<Block> {
-        self.parse_block()
+    pub fn parse(mut self) -> rustyc_diagnostics::Result<Item> {
+        let low = self.token.get_span().clone();
+
+        let function = self.parse_function()?;
+
+        Ok(Item::new(
+            ItemKind::Function(function),
+            self.compute_span(&low),
+        ))
+    }
+
+    fn parse_function(&mut self) -> rustyc_diagnostics::Result<FunctionItem> {
+        let body = self.parse_block()?;
+        let function = FunctionItem::new(body, self.local_variables.clone());
+        self.local_variables.clear();
+
+        Ok(function)
     }
 
     fn parse_block(&mut self) -> rustyc_diagnostics::Result<Block> {
@@ -231,10 +249,11 @@ impl Parser {
         }
 
         if let Some(identifier) = self.eat_identifier() {
-            return Ok(self.new_variable_expression(
-                identifier.chars().next().unwrap(), // TODO: Update
-                &low,
-            ));
+            if !self.local_variables.contains(&identifier) {
+                self.local_variables.push(identifier.clone());
+            }
+
+            return Ok(self.new_variable_expression(identifier, &low));
         }
 
         if let Some(number) = self.eat_number() {
@@ -275,7 +294,7 @@ impl Parser {
         self.new_expression(ExpressionKind::Unary(operator, right), low)
     }
 
-    fn new_variable_expression(&self, name: char, low: &Span) -> Box<Expression> {
+    fn new_variable_expression(&self, name: String, low: &Span) -> Box<Expression> {
         self.new_expression(ExpressionKind::Variable(name), low)
     }
 

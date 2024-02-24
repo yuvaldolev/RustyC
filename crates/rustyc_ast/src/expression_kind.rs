@@ -5,6 +5,6 @@ pub enum ExpressionKind {
     Assignment(Box<Expression>, Box<Expression>),
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
     Unary(UnaryOperator, Box<Expression>),
-    Variable(char),
+    Variable(String),
     Number(u64),
 }

@@ -15,4 +15,8 @@ impl Block {
     pub fn get_statements(&self) -> &[Statement] {
         &self.statements
     }
+
+    pub fn get_span(&self) -> &Span {
+        &self.span
+    }
 }
