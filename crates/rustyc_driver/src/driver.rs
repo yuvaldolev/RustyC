@@ -28,10 +28,10 @@ impl Driver {
     }
 
     fn run_checked(&mut self) -> rustyc_diagnostics::Result<()> {
-        let mut lexer = Lexer::new(&self.source)?;
+        let lexer = Lexer::new(&self.source)?;
         let tokens = lexer.lex()?;
 
-        let mut parser = Parser::new(tokens);
+        let parser = Parser::new(tokens);
         let ast = parser.parse()?;
 
         let code_generator = CodeGenerator::new(ast);

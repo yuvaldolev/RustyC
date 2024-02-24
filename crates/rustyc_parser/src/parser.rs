@@ -1,6 +1,8 @@
 use std::mem;
 
-use rustyc_ast::{Node, NodeKind};
+use rustyc_ast::{
+    BinaryOperator, Block, Expression, ExpressionKind, Statement, StatementKind, UnaryOperator,
+};
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
 use rustyc_token::{BinaryOperatorToken, DelimiterToken, Token, TokenKind, TokenKindSet};
@@ -28,161 +30,183 @@ impl Parser {
         parser
     }
 
-    pub fn parse(&mut self) -> rustyc_diagnostics::Result<Vec<Box<Node>>> {
-        let mut statements: Vec<Box<Node>> = Vec::new();
+    pub fn parse(mut self) -> rustyc_diagnostics::Result<Block> {
+        self.parse_block()
+    }
+
+    fn parse_block(&mut self) -> rustyc_diagnostics::Result<Block> {
+        let low = self.token.get_span().clone();
+
+        let mut statements: Vec<Statement> = Vec::new();
 
         while !self.is_eof() {
             let statement = self.parse_statement()?;
             statements.push(statement);
         }
 
-        Ok(statements)
+        Ok(Block::new(statements, self.compute_span(&low)))
     }
 
-    fn bump(&mut self) {
-        self.previous_token = mem::replace(&mut self.token, self.cursor.next());
-        self.expected_tokens.clear();
-    }
-
-    fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
         self.parse_expression_statement()
     }
 
-    fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
         let low = self.token.get_span().clone();
 
-        let left = self.parse_expression()?;
+        let expression = self.parse_expression()?;
         self.expect_semicolon()?;
 
-        Ok(self.new_unary_node(NodeKind::ExpressionStatement, &low, left))
+        Ok(Statement::new(
+            StatementKind::Expression(expression),
+            self.compute_span(&low),
+        ))
     }
 
-    fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         self.parse_assignment()
     }
 
-    fn parse_assignment(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_assignment(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         let low = self.token.get_span().clone();
 
-        let mut node = self.parse_equality()?;
+        let mut expression = self.parse_equality()?;
 
         if self.eat_equal() {
             let right = self.parse_assignment()?;
-            node = self.new_binary_node(NodeKind::Assignment, &low, node, right);
+            expression = self.new_assignment_expression(expression, right, &low);
         }
 
-        Ok(node)
+        Ok(expression)
     }
 
-    fn parse_equality(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_equality(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         let low = self.token.get_span().clone();
 
-        let mut node = self.parse_relational()?;
+        let mut expression = self.parse_relational()?;
 
         loop {
             if self.eat_equal_equal() {
                 let right = self.parse_relational()?;
-                node = self.new_binary_node(NodeKind::Equality, &low, node, right);
+                expression =
+                    self.new_binary_expression(BinaryOperator::Equal, expression, right, &low);
                 continue;
             }
 
             if self.eat_not_equal() {
                 let right = self.parse_relational()?;
-                node = self.new_binary_node(NodeKind::NotEqual, &low, node, right);
+                expression =
+                    self.new_binary_expression(BinaryOperator::NotEqual, expression, right, &low);
                 continue;
             }
 
             break;
         }
 
-        Ok(node)
+        Ok(expression)
     }
 
-    fn parse_relational(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_relational(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         let low = self.token.get_span().clone();
 
-        let mut node = self.parse_addition()?;
+        let mut expression = self.parse_addition()?;
 
         loop {
             if self.eat_less_than() {
                 let right = self.parse_addition()?;
-                node = self.new_binary_node(NodeKind::LessThan, &low, node, right);
+                expression =
+                    self.new_binary_expression(BinaryOperator::LessThan, expression, right, &low);
                 continue;
             }
 
             if self.eat_less_equal() {
                 let right = self.parse_addition()?;
-                node = self.new_binary_node(NodeKind::LessThanOrEqual, &low, node, right);
+                expression = self.new_binary_expression(
+                    BinaryOperator::LessThanOrEqual,
+                    expression,
+                    right,
+                    &low,
+                );
                 continue;
             }
 
             if self.eat_greater_than() {
                 let left = self.parse_addition()?;
-                node = self.new_binary_node(NodeKind::LessThan, &low, left, node);
+                expression =
+                    self.new_binary_expression(BinaryOperator::LessThan, left, expression, &low);
                 continue;
             }
 
             if self.eat_greater_equal() {
                 let left = self.parse_addition()?;
-                node = self.new_binary_node(NodeKind::LessThanOrEqual, &low, left, node);
+                expression = self.new_binary_expression(
+                    BinaryOperator::LessThanOrEqual,
+                    left,
+                    expression,
+                    &low,
+                );
                 continue;
             }
 
             break;
         }
 
-        Ok(node)
+        Ok(expression)
     }
 
-    fn parse_addition(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_addition(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         let low = self.token.get_span().clone();
 
-        let mut node = self.parse_multiplication()?;
+        let mut expression = self.parse_multiplication()?;
 
         loop {
             if self.eat_plus() {
                 let right = self.parse_multiplication()?;
-                node = self.new_binary_node(NodeKind::Addition, &low, node, right);
+                expression =
+                    self.new_binary_expression(BinaryOperator::Add, expression, right, &low);
                 continue;
             }
 
             if self.eat_minus() {
                 let right = self.parse_multiplication()?;
-                node = self.new_binary_node(NodeKind::Subtraction, &low, node, right);
+                expression =
+                    self.new_binary_expression(BinaryOperator::Subtract, expression, right, &low);
                 continue;
             }
 
             break;
         }
 
-        Ok(node)
+        Ok(expression)
     }
 
-    fn parse_multiplication(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_multiplication(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         let low = self.token.get_span().clone();
 
-        let mut node = self.parse_unary()?;
+        let mut expression = self.parse_unary()?;
 
         loop {
             if self.eat_star() {
                 let right = self.parse_unary()?;
-                node = self.new_binary_node(NodeKind::Multiplication, &low, node, right);
+                expression =
+                    self.new_binary_expression(BinaryOperator::Multiply, expression, right, &low);
                 continue;
             }
 
             if self.eat_slash() {
                 let right = self.parse_unary()?;
-                node = self.new_binary_node(NodeKind::Division, &low, node, right);
+                expression =
+                    self.new_binary_expression(BinaryOperator::Divide, expression, right, &low);
                 continue;
             }
 
             break;
         }
 
-        Ok(node)
+        Ok(expression)
     }
 
-    fn parse_unary(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_unary(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         let low = self.token.get_span().clone();
 
         if self.eat_plus() {
@@ -190,31 +214,31 @@ impl Parser {
         }
 
         if self.eat_minus() {
-            let left = self.parse_unary()?;
-            return Ok(self.new_unary_node(NodeKind::Negation, &low, left));
+            let right = self.parse_unary()?;
+            return Ok(self.new_unary_expression(UnaryOperator::Negate, right, &low));
         }
 
         self.parse_primary()
     }
 
-    fn parse_primary(&mut self) -> rustyc_diagnostics::Result<Box<Node>> {
+    fn parse_primary(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
         let low = self.token.get_span().clone();
 
         if self.eat_open_parenthesis() {
-            let node = self.parse_expression()?;
+            let expression = self.parse_expression()?;
             self.expect_close_parenthesis()?;
-            return Ok(node);
+            return Ok(expression);
         }
 
         if let Some(identifier) = self.eat_identifier() {
-            return Ok(self.new_node(
-                NodeKind::Variable(identifier.chars().next().unwrap()), // TODO: Update
+            return Ok(self.new_variable_expression(
+                identifier.chars().next().unwrap(), // TODO: Update
                 &low,
             ));
         }
 
         if let Some(number) = self.eat_number() {
-            return Ok(self.new_node(NodeKind::Number(number), &low));
+            return Ok(self.new_number_expression(number, &low));
         }
 
         Err(Diagnostic::new_error(
@@ -223,31 +247,44 @@ impl Parser {
         ))
     }
 
-    fn new_node(&self, kind: NodeKind, low: &Span) -> Box<Node> {
-        Box::new(Node::new(kind, low.to(self.previous_token.get_span())))
-    }
-
-    fn new_unary_node(&self, kind: NodeKind, low: &Span, left: Box<Node>) -> Box<Node> {
-        Box::new(Node::new_unary(
-            kind,
-            low.to(self.previous_token.get_span()),
-            left,
-        ))
-    }
-
-    fn new_binary_node(
+    fn new_assignment_expression(
         &self,
-        kind: NodeKind,
+        left: Box<Expression>,
+        right: Box<Expression>,
         low: &Span,
-        left: Box<Node>,
-        right: Box<Node>,
-    ) -> Box<Node> {
-        Box::new(Node::new_binary(
-            kind,
-            low.to(self.previous_token.get_span()),
-            left,
-            right,
-        ))
+    ) -> Box<Expression> {
+        self.new_expression(ExpressionKind::Assignment(left, right), low)
+    }
+
+    fn new_binary_expression(
+        &self,
+        operator: BinaryOperator,
+        left: Box<Expression>,
+        right: Box<Expression>,
+        low: &Span,
+    ) -> Box<Expression> {
+        self.new_expression(ExpressionKind::Binary(operator, left, right), low)
+    }
+
+    fn new_unary_expression(
+        &self,
+        operator: UnaryOperator,
+        right: Box<Expression>,
+        low: &Span,
+    ) -> Box<Expression> {
+        self.new_expression(ExpressionKind::Unary(operator, right), low)
+    }
+
+    fn new_variable_expression(&self, name: char, low: &Span) -> Box<Expression> {
+        self.new_expression(ExpressionKind::Variable(name), low)
+    }
+
+    fn new_number_expression(&self, value: u64, low: &Span) -> Box<Expression> {
+        self.new_expression(ExpressionKind::Number(value), low)
+    }
+
+    fn new_expression(&self, kind: ExpressionKind, low: &Span) -> Box<Expression> {
+        Box::new(Expression::new(kind, self.compute_span(low)))
     }
 
     fn expect_close_parenthesis(&mut self) -> rustyc_diagnostics::Result<()> {
@@ -385,6 +422,11 @@ impl Parser {
         }
     }
 
+    fn bump(&mut self) {
+        self.previous_token = mem::replace(&mut self.token, self.cursor.next());
+        self.expected_tokens.clear();
+    }
+
     fn check(&mut self, kind: TokenKind) -> bool {
         let result = (*self.token.get_kind()) == kind;
         self.expected_tokens.insert(kind);
@@ -394,5 +436,9 @@ impl Parser {
 
     fn is_eof(&self) -> bool {
         TokenKind::Eof == (*self.token.get_kind())
+    }
+
+    fn compute_span(&self, low: &Span) -> Span {
+        low.to(self.previous_token.get_span())
     }
 }

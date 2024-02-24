@@ -1,19 +1,21 @@
-use rustyc_ast::{Node, NodeKind};
+use rustyc_ast::{
+    BinaryOperator, Block, Expression, ExpressionKind, Statement, StatementKind, UnaryOperator,
+};
 use rustyc_diagnostics::Diagnostic;
 
 pub struct CodeGenerator {
-    ast: Vec<Box<Node>>,
+    ast: Block,
 }
 
 impl CodeGenerator {
-    pub fn new(ast: Vec<Box<Node>>) -> Self {
+    pub fn new(ast: Block) -> Self {
         Self { ast }
     }
 
-    pub fn generate(&self) -> rustyc_diagnostics::Result<()> {
+    pub fn generate(self) -> rustyc_diagnostics::Result<()> {
         Self::generate_prologue();
 
-        for statement in self.ast.iter() {
+        for statement in self.ast.get_statements().iter() {
             Self::generate_statement(statement)?;
         }
 
@@ -33,20 +35,10 @@ impl CodeGenerator {
         Self::emit_instruction("sub sp, sp, #208");
     }
 
-    fn generate_statement(node: &Node) -> rustyc_diagnostics::Result<()> {
-        match node.get_kind() {
-            NodeKind::ExpressionStatement => {
-                let left = node.get_left().ok_or(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::InvalidExpressionStatement,
-                    node.get_span().clone(),
-                ))?;
-                Self::generate_expression(left)?;
-            }
-            _ => {
-                return Err(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::InvalidStatement,
-                    node.get_span().clone(),
-                ));
+    fn generate_statement(statement: &Statement) -> rustyc_diagnostics::Result<()> {
+        match statement.get_kind() {
+            StatementKind::Expression(expression) => {
+                Self::generate_expression(expression)?;
             }
         }
 
@@ -59,84 +51,86 @@ impl CodeGenerator {
         Self::emit_instruction("ret");
     }
 
-    fn generate_expression(node: &Node) -> rustyc_diagnostics::Result<()> {
-        match node.get_kind() {
-            NodeKind::Number(number) => {
-                Self::emit_instruction(format!("mov x0, #{}", number).as_str());
-                return Ok(());
+    fn generate_expression(expression: &Expression) -> rustyc_diagnostics::Result<()> {
+        match expression.get_kind() {
+            ExpressionKind::Assignment(left, right) => {
+                Self::generate_assignment_expression(left, right)?
             }
-            NodeKind::Variable(variable) => {
-                Self::generate_variable_read(*variable);
-                return Ok(());
+            ExpressionKind::Binary(operator, left, right) => {
+                Self::generate_binary_expression(operator, left, right)?
             }
-            NodeKind::Negation => {
-                let left = node.get_left().ok_or(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::InvalidNegationExpression,
-                    node.get_span().clone(),
-                ))?;
-                Self::generate_expression(left)?;
-                Self::emit_instruction("neg x0, x0");
-                return Ok(());
+            ExpressionKind::Unary(operator, right) => {
+                Self::generate_unary_expression(operator, right)?
             }
-            NodeKind::Assignment => {
-                let left = node.get_left().ok_or(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::InvalidAssignmentExpression,
-                    node.get_span().clone(),
-                ))?;
-                let NodeKind::Variable(left_variable) = left.get_kind() else {
-                    return Err(Diagnostic::new_error(
-                        rustyc_diagnostics::Error::InvalidAssignmentExpression,
-                        left.get_span().clone(),
-                    ));
-                };
-
-                let right = node.get_right().ok_or(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::InvalidAssignmentExpression,
-                    node.get_span().clone(),
-                ))?;
-                Self::generate_expression(right)?;
-
-                Self::generate_variable_write(*left_variable);
-
-                return Ok(());
-            }
-            _ => {}
+            ExpressionKind::Variable(variable) => Self::generate_variable_expression(*variable),
+            ExpressionKind::Number(number) => Self::generate_number_expression(*number),
         }
 
-        let right = node.get_right().ok_or(Diagnostic::new_error(
-            rustyc_diagnostics::Error::InvalidExpression,
-            node.get_span().clone(),
-        ))?;
-        Self::generate_expression(right)?;
+        Ok(())
+    }
 
+    fn generate_assignment_expression(
+        left: &Expression,
+        right: &Expression,
+    ) -> rustyc_diagnostics::Result<()> {
+        let ExpressionKind::Variable(variable) = left.get_kind() else {
+            return Err(Diagnostic::new_error(
+                rustyc_diagnostics::Error::InvalidAssignmentExpression,
+                left.get_span().clone(),
+            ));
+        };
+
+        Self::generate_expression(right)?;
+        Self::generate_variable_write(*variable);
+
+        Ok(())
+    }
+
+    fn generate_binary_expression(
+        operator: &BinaryOperator,
+        left: &Expression,
+        right: &Expression,
+    ) -> rustyc_diagnostics::Result<()> {
+        Self::generate_expression(right)?;
         Self::generate_push("x0");
 
-        let left = node.get_left().ok_or(Diagnostic::new_error(
-            rustyc_diagnostics::Error::InvalidExpression,
-            node.get_span().clone(),
-        ))?;
         Self::generate_expression(left)?;
 
         Self::generate_pop("x1");
 
-        match node.get_kind() {
-            NodeKind::Addition => Self::emit_instruction("add x0, x0, x1"),
-            NodeKind::Subtraction => Self::emit_instruction("sub x0, x0, x1"),
-            NodeKind::Multiplication => Self::emit_instruction("mul x0, x0, x1"),
-            NodeKind::Division => Self::emit_instruction("sdiv x0, x0, x1"),
-            NodeKind::Equality => Self::generate_comparison("eq"),
-            NodeKind::NotEqual => Self::generate_comparison("ne"),
-            NodeKind::LessThan => Self::generate_comparison("lt"),
-            NodeKind::LessThanOrEqual => Self::generate_comparison("le"),
-            _ => {
-                return Err(Diagnostic::new_error(
-                    rustyc_diagnostics::Error::InvalidExpression,
-                    node.get_span().clone(),
-                ));
-            }
+        match operator {
+            BinaryOperator::Equal => Self::generate_comparison("eq"),
+            BinaryOperator::NotEqual => Self::generate_comparison("ne"),
+            BinaryOperator::LessThan => Self::generate_comparison("lt"),
+            BinaryOperator::LessThanOrEqual => Self::generate_comparison("le"),
+            BinaryOperator::Add => Self::emit_instruction("add x0, x0, x1"),
+            BinaryOperator::Subtract => Self::emit_instruction("sub x0, x0, x1"),
+            BinaryOperator::Multiply => Self::emit_instruction("mul x0, x0, x1"),
+            BinaryOperator::Divide => Self::emit_instruction("sdiv x0, x0, x1"),
         }
 
         Ok(())
+    }
+
+    fn generate_unary_expression(
+        operator: &UnaryOperator,
+        right: &Expression,
+    ) -> rustyc_diagnostics::Result<()> {
+        Self::generate_expression(right)?;
+
+        match operator {
+            UnaryOperator::Negate => Self::emit_instruction("neg x0, x0"),
+        }
+
+        Ok(())
+    }
+
+    fn generate_variable_expression(variable: char) {
+        Self::generate_variable_read(variable)
+    }
+
+    fn generate_number_expression(number: u64) {
+        Self::emit_instruction(format!("mov x0, #{}", number).as_str())
     }
 
     fn generate_comparison(condition: &str) {

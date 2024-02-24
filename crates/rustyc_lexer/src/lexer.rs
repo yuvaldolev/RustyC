@@ -29,7 +29,7 @@ impl<'a> Lexer<'a> {
         Ok(lexer)
     }
 
-    pub fn lex(&mut self) -> rustyc_diagnostics::Result<Vec<Token>> {
+    pub fn lex(mut self) -> rustyc_diagnostics::Result<Vec<Token>> {
         let mut tokens = Vec::new();
 
         loop {
