@@ -53,29 +53,32 @@ impl CodeGenerator {
         Ok(())
     }
 
+    fn generate_statement(
+        statement: &Statement,
+        local_variables: &HashMap<String, VariableProperties>,
+    ) -> rustyc_diagnostics::Result<()> {
+        match statement.get_kind() {
+            StatementKind::Compound(block) => {
+                Self::generate_block(block, local_variables)?;
+            }
+            StatementKind::Return(expression) => {
+                Self::generate_expression(expression, local_variables)?;
+                Self::emit_instruction("b .L.return");
+            }
+            StatementKind::Expression(expression) => {
+                Self::generate_expression(expression, local_variables)?;
+            }
+        }
+
+        Ok(())
+    }
+
     fn generate_block(
         block: &Block,
         local_variables: &HashMap<String, VariableProperties>,
     ) -> rustyc_diagnostics::Result<()> {
         for statement in block.get_statements().iter() {
             Self::generate_statement(statement, local_variables)?;
-        }
-
-        Ok(())
-    }
-
-    fn generate_statement(
-        statement: &Statement,
-        local_variables: &HashMap<String, VariableProperties>,
-    ) -> rustyc_diagnostics::Result<()> {
-        match statement.get_kind() {
-            StatementKind::Expression(expression) => {
-                Self::generate_expression(expression, local_variables)?;
-            }
-            StatementKind::Return(expression) => {
-                Self::generate_expression(expression, local_variables)?;
-                Self::emit_instruction("b .L.return");
-            }
         }
 
         Ok(())

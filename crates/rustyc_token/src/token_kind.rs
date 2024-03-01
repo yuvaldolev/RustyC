@@ -41,6 +41,8 @@ impl fmt::Display for TokenKind {
             Self::BinaryOperator(BinaryOperatorToken::Slash) => write!(f, "/"),
             Self::OpenDelimiter(DelimiterToken::Parenthesis) => write!(f, "("),
             Self::CloseDelimiter(DelimiterToken::Parenthesis) => write!(f, ")"),
+            Self::OpenDelimiter(DelimiterToken::Brace) => write!(f, "{{"),
+            Self::CloseDelimiter(DelimiterToken::Brace) => write!(f, "}}"),
             Self::Eof => write!(f, "<eof>"),
         }
     }

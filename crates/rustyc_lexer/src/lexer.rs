@@ -61,10 +61,13 @@ impl<'a> Lexer<'a> {
 
             if next_token_preceded_by_whitespace {
                 return Ok(next_token);
-            } else if let Some(glued) = self.token.glue(&next_token) {
-                self.token = glued;
-            } else {
-                return Ok(next_token);
+            }
+
+            match self.token.glue(&next_token) {
+                Some(glued) => {
+                    self.token = glued;
+                }
+                None => return Ok(next_token),
             }
         }
     }
@@ -93,6 +96,8 @@ impl<'a> Lexer<'a> {
                 RawTokenKind::CloseParenthesis => {
                     TokenKind::CloseDelimiter(DelimiterToken::Parenthesis)
                 }
+                RawTokenKind::OpenBrace => TokenKind::OpenDelimiter(DelimiterToken::Brace),
+                RawTokenKind::CloseBrace => TokenKind::CloseDelimiter(DelimiterToken::Brace),
                 RawTokenKind::Semicolon => TokenKind::Semicolon,
                 RawTokenKind::Number => self.lex_number(start)?,
                 RawTokenKind::Identifier => self.lex_identifier(start),

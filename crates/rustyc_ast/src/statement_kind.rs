@@ -1,6 +1,7 @@
-use crate::Expression;
+use crate::{Block, Expression};
 
 pub enum StatementKind {
-    Expression(Box<Expression>),
+    Compound(Block),
     Return(Box<Expression>),
+    Expression(Box<Expression>),
 }

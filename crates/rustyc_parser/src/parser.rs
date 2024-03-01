@@ -52,29 +52,32 @@ impl Parser {
         Ok(function)
     }
 
-    fn parse_block(&mut self) -> rustyc_diagnostics::Result<Block> {
-        let low = self.token.get_span().clone();
-
-        let mut statements: Vec<Statement> = Vec::new();
-
-        while !self.is_eof() {
-            let statement = self.parse_statement()?;
-            statements.push(statement);
+    fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
+        if self.check_keyword(Keyword::Return) {
+            return self.parse_return_statement();
         }
 
-        Ok(Block::new(statements, self.compute_span(&low)))
-    }
-
-    fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
-        if self.eat_keyword(Keyword::Return) {
-            return self.parse_return_statement();
+        if self.check_open_brace() {
+            return self.parse_compound_statement();
         }
 
         self.parse_expression_statement()
     }
 
+    fn parse_compound_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
+        let low = self.token.get_span().clone();
+        let block = self.parse_block()?;
+
+        Ok(Statement::new(
+            StatementKind::Compound(block),
+            self.compute_span(&low),
+        ))
+    }
+
     fn parse_return_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
         let low = self.token.get_span().clone();
+
+        self.expect_keyword(Keyword::Return)?;
 
         let expression = self.parse_expression()?;
         self.expect_semicolon()?;
@@ -95,6 +98,21 @@ impl Parser {
             StatementKind::Expression(expression),
             self.compute_span(&low),
         ))
+    }
+
+    fn parse_block(&mut self) -> rustyc_diagnostics::Result<Block> {
+        let low = self.token.get_span().clone();
+
+        self.expect_open_brace()?;
+
+        let mut statements: Vec<Statement> = Vec::new();
+
+        while !self.eat_close_brace() {
+            let statement = self.parse_statement()?;
+            statements.push(statement);
+        }
+
+        Ok(Block::new(statements, self.compute_span(&low)))
     }
 
     fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
@@ -332,10 +350,30 @@ impl Parser {
         }
     }
 
+    fn expect_open_brace(&mut self) -> rustyc_diagnostics::Result<()> {
+        self.expected_tokens.clear();
+
+        if self.eat_open_brace() {
+            Ok(())
+        } else {
+            Err(self.unexpected_token())
+        }
+    }
+
     fn expect_semicolon(&mut self) -> rustyc_diagnostics::Result<()> {
         self.expected_tokens.clear();
 
         if self.eat_semicolon() {
+            Ok(())
+        } else {
+            Err(self.unexpected_token())
+        }
+    }
+
+    fn expect_keyword(&mut self, keyword: Keyword) -> rustyc_diagnostics::Result<()> {
+        self.expected_tokens.clear();
+
+        if self.eat_keyword(keyword) {
             Ok(())
         } else {
             Err(self.unexpected_token())
@@ -410,6 +448,14 @@ impl Parser {
         self.eat_close_delimiter(DelimiterToken::Parenthesis)
     }
 
+    fn eat_open_brace(&mut self) -> bool {
+        self.eat_open_delimiter(DelimiterToken::Brace)
+    }
+
+    fn eat_close_brace(&mut self) -> bool {
+        self.eat_close_delimiter(DelimiterToken::Brace)
+    }
+
     fn eat_semicolon(&mut self) -> bool {
         self.eat(TokenKind::Semicolon)
     }
@@ -471,6 +517,14 @@ impl Parser {
         self.expected_tokens.clear();
     }
 
+    fn check_open_brace(&mut self) -> bool {
+        self.check_open_delimiter(DelimiterToken::Brace)
+    }
+
+    fn check_open_delimiter(&mut self, token: DelimiterToken) -> bool {
+        self.check(TokenKind::OpenDelimiter(token))
+    }
+
     fn check(&mut self, kind: TokenKind) -> bool {
         let result = (*self.token.get_kind()) == kind;
         self.expected_tokens.insert(kind);
@@ -482,10 +536,6 @@ impl Parser {
         // TODO: Add a `TokenCategory` enum and save expected tokens as instances of
         // this enum. Then add a the keyword to the expected tokens.
         self.token.is_keyword(&keyword)
-    }
-
-    fn is_eof(&self) -> bool {
-        TokenKind::Eof == (*self.token.get_kind())
     }
 
     fn compute_span(&self, low: &Span) -> Span {
