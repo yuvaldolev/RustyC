@@ -6,7 +6,7 @@ use rustyc_ast::{
 };
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
-use rustyc_token::{BinaryOperatorToken, DelimiterToken, Token, TokenKind, TokenKindSet};
+use rustyc_token::{BinaryOperatorToken, DelimiterToken, Keyword, Token, TokenKind, TokenKindSet};
 
 use crate::token_cursor::TokenCursor;
 
@@ -66,7 +66,23 @@ impl Parser {
     }
 
     fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
+        if self.eat_keyword(Keyword::Return) {
+            return self.parse_return_statement();
+        }
+
         self.parse_expression_statement()
+    }
+
+    fn parse_return_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
+        let low = self.token.get_span().clone();
+
+        let expression = self.parse_expression()?;
+        self.expect_semicolon()?;
+
+        Ok(Statement::new(
+            StatementKind::Return(expression),
+            self.compute_span(&low),
+        ))
     }
 
     fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
@@ -432,6 +448,15 @@ impl Parser {
         self.eat(TokenKind::CloseDelimiter(token))
     }
 
+    fn eat_keyword(&mut self, keyword: Keyword) -> bool {
+        if self.check_keyword(keyword) {
+            self.bump();
+            true
+        } else {
+            false
+        }
+    }
+
     fn eat(&mut self, kind: TokenKind) -> bool {
         if self.check(kind) {
             self.bump();
@@ -451,6 +476,12 @@ impl Parser {
         self.expected_tokens.insert(kind);
 
         result
+    }
+
+    fn check_keyword(&self, keyword: Keyword) -> bool {
+        // TODO: Add a `TokenCategory` enum and save expected tokens as instances of
+        // this enum. Then add a the keyword to the expected tokens.
+        self.token.is_keyword(&keyword)
     }
 
     fn is_eof(&self) -> bool {

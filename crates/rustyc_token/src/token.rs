@@ -1,6 +1,6 @@
 use rustyc_span::Span;
 
-use crate::TokenKind;
+use crate::{Keyword, TokenKind};
 
 #[derive(Clone, Debug)]
 pub struct Token {
@@ -47,5 +47,17 @@ impl Token {
         };
 
         Some(Token::new(kind, self.span.to(&joint.span)))
+    }
+
+    pub fn is_keyword(&self, keyword: &Keyword) -> bool {
+        self.get_identifier()
+            .is_some_and(|identifier| keyword.to_string().to_lowercase() == identifier)
+    }
+
+    pub fn get_identifier(&self) -> Option<&str> {
+        match &self.kind {
+            TokenKind::Identifier(name) => Some(name),
+            _ => None,
+        }
     }
 }

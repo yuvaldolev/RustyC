@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+enum-display = "0.1.4"
 rustyc_span = { path = "../rustyc_span" }

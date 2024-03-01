@@ -37,6 +37,10 @@ impl CodeGenerator {
     fn generate_function(function: &FunctionItem) -> rustyc_diagnostics::Result<()> {
         // TODO: In the future the function name will be parsed into the `FunctionItem`
         // struct and thus should be removed from the `FunctionProperties` struct.
+        //
+        // TODO: Instead of passing the local variables map everywhere,
+        // create a dedicated code generator struct for a single function and have it
+        // store the function properties as a member.
         let function_properties = FunctionProperties::new(String::from("_main"), function);
 
         Self::generate_function_prologue(&function_properties);
@@ -67,6 +71,10 @@ impl CodeGenerator {
         match statement.get_kind() {
             StatementKind::Expression(expression) => {
                 Self::generate_expression(expression, local_variables)?;
+            }
+            StatementKind::Return(expression) => {
+                Self::generate_expression(expression, local_variables)?;
+                Self::emit_instruction("b .L.return");
             }
         }
 
@@ -176,6 +184,7 @@ impl CodeGenerator {
     }
 
     fn generate_function_epilogue() {
+        println!(".L.return:");
         Self::emit_instruction("mov sp, fp");
         Self::generate_pop("fp");
         Self::emit_instruction("ret");
