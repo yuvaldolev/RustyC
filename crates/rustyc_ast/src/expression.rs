@@ -2,7 +2,7 @@ use rustyc_span::Span;
 
 use crate::expression_kind::ExpressionKind;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Expression {
     kind: ExpressionKind,
     span: Span,

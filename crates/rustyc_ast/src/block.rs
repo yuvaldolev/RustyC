@@ -2,6 +2,7 @@ use rustyc_span::Span;
 
 use crate::statement::Statement;
 
+#[derive(Clone)]
 pub struct Block {
     statements: Vec<Statement>,
     span: Span,

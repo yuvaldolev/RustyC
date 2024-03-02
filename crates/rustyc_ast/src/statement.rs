@@ -2,6 +2,7 @@ use rustyc_span::Span;
 
 use crate::statement_kind::StatementKind;
 
+#[derive(Clone)]
 pub struct Statement {
     kind: StatementKind,
     span: Span,

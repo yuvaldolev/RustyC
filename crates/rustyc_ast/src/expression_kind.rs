@@ -1,6 +1,6 @@
 use crate::{binary_operator::BinaryOperator, unary_operator::UnaryOperator, Expression};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ExpressionKind {
     Assignment(Box<Expression>, Box<Expression>),
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
