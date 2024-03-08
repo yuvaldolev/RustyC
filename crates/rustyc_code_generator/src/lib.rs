@@ -1,7 +1,11 @@
 mod aarch64_instruction_emitter;
+mod block_generator;
 mod code_generator;
+mod expression_generator;
+mod function;
 mod function_generator;
-mod function_properties;
+mod item_generator;
+mod statement_generator;
 mod variable_properties;
 
 pub use code_generator::CodeGenerator;

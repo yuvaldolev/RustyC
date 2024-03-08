@@ -76,6 +76,11 @@ impl Aarch64InstructionEmitter {
         println!(".global {symbol}");
     }
 
+    pub fn emit_text_section_directive(&self) {
+        println!(".text");
+        println!();
+    }
+
     fn emit_instruction(instruction: &str) {
         println!("  {}", instruction);
     }
