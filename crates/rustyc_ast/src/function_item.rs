@@ -1,6 +1,5 @@
 use crate::block::Block;
 
-#[derive(Clone)]
 pub struct FunctionItem {
     body: Block,
     local_variables: Vec<String>,
