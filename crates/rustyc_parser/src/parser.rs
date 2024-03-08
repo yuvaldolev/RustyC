@@ -52,6 +52,21 @@ impl Parser {
         Ok(function)
     }
 
+    fn parse_block(&mut self) -> rustyc_diagnostics::Result<Block> {
+        let low = self.token.get_span().clone();
+
+        self.expect_open_brace()?;
+
+        let mut statements: Vec<Statement> = Vec::new();
+
+        while !self.eat_close_brace() {
+            let statement = self.parse_statement()?;
+            statements.push(statement);
+        }
+
+        Ok(Block::new(statements, self.compute_span(&low)))
+    }
+
     fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
         if self.check_keyword(Keyword::Return) {
             return self.parse_return_statement();
@@ -91,6 +106,14 @@ impl Parser {
     fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
         let low = self.token.get_span().clone();
 
+        if self.eat_semicolon() {
+            let span = self.compute_span(&low);
+            return Ok(Statement::new(
+                StatementKind::Compound(Block::new(Vec::new(), span.clone())),
+                span,
+            ));
+        }
+
         let expression = self.parse_expression()?;
         self.expect_semicolon()?;
 
@@ -98,21 +121,6 @@ impl Parser {
             StatementKind::Expression(expression),
             self.compute_span(&low),
         ))
-    }
-
-    fn parse_block(&mut self) -> rustyc_diagnostics::Result<Block> {
-        let low = self.token.get_span().clone();
-
-        self.expect_open_brace()?;
-
-        let mut statements: Vec<Statement> = Vec::new();
-
-        while !self.eat_close_brace() {
-            let statement = self.parse_statement()?;
-            statements.push(statement);
-        }
-
-        Ok(Block::new(statements, self.compute_span(&low)))
     }
 
     fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {

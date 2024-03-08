@@ -90,6 +90,8 @@ assert 6 "{ 2; 5 + 6; return 9 - 3; }"
 
 assert 3 "{ {1; {2;} return 3; } }"
 
+assert 5 "{ ; ;; return 5; }"
+
 popd >/dev/null
 
 if [[ 1 == $RESULT ]]; then
