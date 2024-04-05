@@ -76,6 +76,8 @@ impl Parser {
             self.parse_if_statement()?
         } else if self.check_keyword(Keyword::For) {
             self.parse_for_statement()?
+        } else if self.check_keyword(Keyword::While) {
+            self.parse_while_statement()?
         } else if self.check_open_brace() {
             self.parse_compound_statement()?
         } else {
@@ -145,10 +147,27 @@ impl Parser {
 
         let then_statement = self.parse_statement()?;
 
-        Ok(StatementKind::For(
-            initialization_statement,
+        Ok(StatementKind::Loop(
+            Some(initialization_statement),
             condition_expression,
             incrementation_expression,
+            then_statement,
+        ))
+    }
+
+    fn parse_while_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
+        self.expect_keyword(Keyword::While)?;
+
+        self.expect_open_parenthesis()?;
+        let condition_expression = self.parse_expression()?;
+        self.expect_close_parenthesis()?;
+
+        let then_statement = self.parse_statement()?;
+
+        Ok(StatementKind::Loop(
+            None,
+            Some(condition_expression),
+            None,
             then_statement,
         ))
     }

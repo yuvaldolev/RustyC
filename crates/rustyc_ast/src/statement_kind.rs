@@ -6,8 +6,8 @@ use crate::{Block, Expression, Statement};
 pub enum StatementKind {
     Return(Rc<Expression>),
     If(Rc<Expression>, Rc<Statement>, Option<Rc<Statement>>),
-    For(
-        Rc<Statement>,
+    Loop(
+        Option<Rc<Statement>>,
         Option<Rc<Expression>>,
         Option<Rc<Expression>>,
         Rc<Statement>,

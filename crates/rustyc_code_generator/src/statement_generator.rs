@@ -38,13 +38,15 @@ impl StatementGenerator {
                     Rc::clone(then_statement),
                     else_statement.as_ref().map(|value| Rc::clone(value)),
                 ),
-            StatementKind::For(
+            StatementKind::Loop(
                 initialization_statement,
                 condition_expression,
                 incrementation_expression,
                 then_statement,
-            ) => self.generate_for(
-                Rc::clone(initialization_statement),
+            ) => self.generate_loop(
+                initialization_statement
+                    .as_ref()
+                    .map(|value| Rc::clone(value)),
                 condition_expression.as_ref().map(|value| Rc::clone(value)),
                 incrementation_expression
                     .as_ref()
@@ -110,9 +112,9 @@ impl StatementGenerator {
         Ok(())
     }
 
-    fn generate_for(
+    fn generate_loop(
         &self,
-        initialization_statement: Rc<Statement>,
+        initialization_statement: Option<Rc<Statement>>,
         condition_expression: Option<Rc<Expression>>,
         incrementation_expression: Option<Rc<Expression>>,
         then_statement: Rc<Statement>,
@@ -120,12 +122,14 @@ impl StatementGenerator {
         let begin_label = self.label_allocator.borrow_mut().allocate("begin");
         let end_label = self.label_allocator.borrow_mut().allocate("end");
 
-        let initialization_statement_generator = Self::new(
-            initialization_statement,
-            Rc::clone(&self.local_variables),
-            Rc::clone(&self.label_allocator),
-        );
-        initialization_statement_generator.generate()?;
+        if let Some(statement) = initialization_statement {
+            let initialization_statement_generator = Self::new(
+                statement,
+                Rc::clone(&self.local_variables),
+                Rc::clone(&self.label_allocator),
+            );
+            initialization_statement_generator.generate()?;
+        }
 
         self.instruction_emitter.emit_label(&begin_label);
 
