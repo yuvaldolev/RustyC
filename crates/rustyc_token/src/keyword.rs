@@ -5,4 +5,5 @@ pub enum Keyword {
     Return,
     If,
     Else,
+    For,
 }

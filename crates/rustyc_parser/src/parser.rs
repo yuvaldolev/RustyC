@@ -74,6 +74,8 @@ impl Parser {
             self.parse_return_statement()?
         } else if self.check_keyword(Keyword::If) {
             self.parse_if_statement()?
+        } else if self.check_keyword(Keyword::For) {
+            self.parse_for_statement()?
         } else if self.check_open_brace() {
             self.parse_compound_statement()?
         } else {
@@ -111,6 +113,43 @@ impl Parser {
             condition_expression,
             then_statement,
             else_statement,
+        ))
+    }
+
+    fn parse_for_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
+        self.expect_keyword(Keyword::For)?;
+
+        self.expect_open_parenthesis()?;
+
+        let low = self.token.get_span().clone();
+        let initialization_statement = Rc::new(Statement::new(
+            self.parse_expression_statement()?,
+            self.compute_span(&low),
+        ));
+
+        let condition_expression = if self.check_semicolon() {
+            None
+        } else {
+            Some(self.parse_expression()?)
+        };
+
+        self.expect_semicolon()?;
+
+        let incrementation_expression = if self.check_close_parenthesis() {
+            None
+        } else {
+            Some(self.parse_expression()?)
+        };
+
+        self.expect_close_parenthesis()?;
+
+        let then_statement = self.parse_statement()?;
+
+        Ok(StatementKind::For(
+            initialization_statement,
+            condition_expression,
+            incrementation_expression,
+            then_statement,
         ))
     }
 
@@ -546,8 +585,20 @@ impl Parser {
         self.check_open_delimiter(DelimiterToken::Brace)
     }
 
+    fn check_close_parenthesis(&mut self) -> bool {
+        self.check_close_delimiter(DelimiterToken::Parenthesis)
+    }
+
+    fn check_semicolon(&mut self) -> bool {
+        self.check(TokenKind::Semicolon)
+    }
+
     fn check_open_delimiter(&mut self, token: DelimiterToken) -> bool {
         self.check(TokenKind::OpenDelimiter(token))
+    }
+
+    fn check_close_delimiter(&mut self, token: DelimiterToken) -> bool {
+        self.check(TokenKind::CloseDelimiter(token))
     }
 
     fn check(&mut self, kind: TokenKind) -> bool {
