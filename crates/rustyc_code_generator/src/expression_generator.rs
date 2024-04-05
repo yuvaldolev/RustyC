@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use rustyc_ast::{BinaryOperator, Expression, ExpressionKind, UnaryOperator};
 use rustyc_diagnostics::Diagnostic;
@@ -7,16 +7,16 @@ use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, variable_properties::VariableProperties,
 };
 
-pub struct ExpressionGenerator<'ast> {
-    expression: &'ast Expression,
-    local_variables: &'ast HashMap<String, VariableProperties>,
+pub struct ExpressionGenerator {
+    expression: Rc<Expression>,
+    local_variables: Rc<HashMap<String, VariableProperties>>,
     instruction_emitter: Aarch64InstructionEmitter,
 }
 
-impl<'ast> ExpressionGenerator<'ast> {
+impl ExpressionGenerator {
     pub fn new(
-        expression: &'ast Expression,
-        local_variables: &'ast HashMap<String, VariableProperties>,
+        expression: Rc<Expression>,
+        local_variables: Rc<HashMap<String, VariableProperties>>,
     ) -> Self {
         Self {
             expression,
@@ -28,13 +28,13 @@ impl<'ast> ExpressionGenerator<'ast> {
     pub fn generate(self) -> rustyc_diagnostics::Result<()> {
         match self.expression.get_kind() {
             ExpressionKind::Assignment(left, right) => {
-                self.generate_assignment_expression(left, right)?
+                self.generate_assignment_expression(left, Rc::clone(right))?
             }
             ExpressionKind::Binary(operator, left, right) => {
-                self.generate_binary_expression(operator, left, right)?
+                self.generate_binary_expression(operator, Rc::clone(left), Rc::clone(right))?
             }
             ExpressionKind::Unary(operator, right) => {
-                self.generate_unary_expression(operator, right)?
+                self.generate_unary_expression(operator, Rc::clone(right))?
             }
             ExpressionKind::Variable(variable) => self.generate_variable_expression(variable),
             ExpressionKind::Number(number) => self.generate_number_expression(*number),
@@ -46,7 +46,7 @@ impl<'ast> ExpressionGenerator<'ast> {
     fn generate_assignment_expression(
         &self,
         left: &Expression,
-        right: &'ast Expression,
+        right: Rc<Expression>,
     ) -> rustyc_diagnostics::Result<()> {
         let ExpressionKind::Variable(variable) = left.get_kind() else {
             return Err(Diagnostic::new_error(
@@ -55,7 +55,7 @@ impl<'ast> ExpressionGenerator<'ast> {
             ));
         };
 
-        let right_expression_generator = Self::new(right, self.local_variables);
+        let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
         right_expression_generator.generate()?;
 
         self.instruction_emitter
@@ -67,23 +67,23 @@ impl<'ast> ExpressionGenerator<'ast> {
     fn generate_binary_expression(
         &self,
         operator: &BinaryOperator,
-        left: &'ast Expression,
-        right: &'ast Expression,
+        left: Rc<Expression>,
+        right: Rc<Expression>,
     ) -> rustyc_diagnostics::Result<()> {
-        let right_expression_generator = Self::new(right, self.local_variables);
+        let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
         right_expression_generator.generate()?;
         self.instruction_emitter.emit_push("x0");
 
-        let left_expression_generator = Self::new(left, self.local_variables);
+        let left_expression_generator = Self::new(left, Rc::clone(&self.local_variables));
         left_expression_generator.generate()?;
 
         self.instruction_emitter.emit_pop("x1");
 
         match operator {
-            BinaryOperator::Equal => self.instruction_emitter.emit_comparison("eq"),
-            BinaryOperator::NotEqual => self.instruction_emitter.emit_comparison("ne"),
-            BinaryOperator::LessThan => self.instruction_emitter.emit_comparison("lt"),
-            BinaryOperator::LessThanOrEqual => self.instruction_emitter.emit_comparison("le"),
+            BinaryOperator::Equal => self.instruction_emitter.emit_conditional_set("eq"),
+            BinaryOperator::NotEqual => self.instruction_emitter.emit_conditional_set("ne"),
+            BinaryOperator::LessThan => self.instruction_emitter.emit_conditional_set("lt"),
+            BinaryOperator::LessThanOrEqual => self.instruction_emitter.emit_conditional_set("le"),
             BinaryOperator::Add => self.instruction_emitter.emit_add("x0", "x1", "x0"),
             BinaryOperator::Subtract => self.instruction_emitter.emit_subtract("x0", "x1", "x0"),
             BinaryOperator::Multiply => self.instruction_emitter.emit_multiply("x0", "x1", "x0"),
@@ -96,9 +96,9 @@ impl<'ast> ExpressionGenerator<'ast> {
     fn generate_unary_expression(
         &self,
         operator: &UnaryOperator,
-        right: &'ast Expression,
+        right: Rc<Expression>,
     ) -> rustyc_diagnostics::Result<()> {
-        let right_expression_generator = Self::new(right, self.local_variables);
+        let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
         right_expression_generator.generate()?;
 
         match operator {

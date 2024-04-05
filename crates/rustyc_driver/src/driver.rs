@@ -21,13 +21,13 @@ impl Driver {
     }
 
     pub fn run(&mut self) -> error::Result<()> {
-        self.run_checked().map_err(|diagnostic| {
+        self.run_passes().map_err(|diagnostic| {
             self.diagnostic_emitter.emit(diagnostic);
             error::Error::Aborted(self.diagnostic_emitter.get_error_count())
         })
     }
 
-    fn run_checked(&mut self) -> rustyc_diagnostics::Result<()> {
+    fn run_passes(&mut self) -> rustyc_diagnostics::Result<()> {
         let lexer = Lexer::new(&self.source)?;
         let tokens = lexer.lex()?;
 

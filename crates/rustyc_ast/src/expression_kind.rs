@@ -1,10 +1,12 @@
+use std::rc::Rc;
+
 use crate::{binary_operator::BinaryOperator, unary_operator::UnaryOperator, Expression};
 
 #[derive(Clone, Debug)]
 pub enum ExpressionKind {
-    Assignment(Box<Expression>, Box<Expression>),
-    Binary(BinaryOperator, Box<Expression>, Box<Expression>),
-    Unary(UnaryOperator, Box<Expression>),
+    Assignment(Rc<Expression>, Rc<Expression>),
+    Binary(BinaryOperator, Rc<Expression>, Rc<Expression>),
+    Unary(UnaryOperator, Rc<Expression>),
     Variable(String),
     Number(u64),
 }

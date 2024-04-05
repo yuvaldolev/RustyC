@@ -1,18 +1,18 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use rustyc_ast::FunctionItem;
 
 use crate::variable_properties::VariableProperties;
 
-pub struct Function<'ast> {
+pub struct Function {
     name: String, // TODO: Remove when parsed into `FunctionItem`.
-    item: &'ast FunctionItem,
+    item: Rc<FunctionItem>,
     stack_size: i64,
-    local_variables: HashMap<String, VariableProperties>,
+    local_variables: Rc<HashMap<String, VariableProperties>>,
 }
 
-impl<'ast> Function<'ast> {
-    pub fn new(name: String, item: &'ast FunctionItem) -> Self {
+impl Function {
+    pub fn new(name: String, item: Rc<FunctionItem>) -> Self {
         let mut local_variables: HashMap<String, VariableProperties> = HashMap::new();
         let mut offset: i64 = 0;
 
@@ -27,7 +27,7 @@ impl<'ast> Function<'ast> {
             name,
             item,
             stack_size: Self::align_to(offset, 16),
-            local_variables,
+            local_variables: Rc::new(local_variables),
         }
     }
 
@@ -36,15 +36,15 @@ impl<'ast> Function<'ast> {
     }
 
     pub fn get_item(&self) -> &FunctionItem {
-        self.item
+        &self.item
     }
 
     pub fn get_stack_size(&self) -> i64 {
         self.stack_size
     }
 
-    pub fn get_local_variables(&self) -> &HashMap<String, VariableProperties> {
-        &self.local_variables
+    pub fn get_local_variables(&self) -> Rc<HashMap<String, VariableProperties>> {
+        Rc::clone(&self.local_variables)
     }
 
     fn align_to(value: i64, alignment: i64) -> i64 {

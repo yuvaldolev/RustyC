@@ -1,8 +1,11 @@
-use crate::{Block, Expression};
+use std::rc::Rc;
+
+use crate::{Block, Expression, Statement};
 
 #[derive(Clone)]
 pub enum StatementKind {
-    Compound(Block),
-    Return(Box<Expression>),
-    Expression(Box<Expression>),
+    Return(Rc<Expression>),
+    If(Rc<Expression>, Rc<Statement>, Option<Rc<Statement>>),
+    Compound(Rc<Block>),
+    Expression(Rc<Expression>),
 }

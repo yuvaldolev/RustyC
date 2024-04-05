@@ -2,6 +2,8 @@ use crate::variable_properties::VariableProperties;
 
 pub struct Aarch64InstructionEmitter;
 
+// TODO: All the formatting in this file can probably be done with an Arena allocator
+// instead of repeatedly allocating Strings in each `format!` invocation.
 impl Aarch64InstructionEmitter {
     pub fn new() -> Self {
         Self
@@ -55,6 +57,10 @@ impl Aarch64InstructionEmitter {
         Self::emit_instruction(format!("b {target}").as_str());
     }
 
+    pub fn emit_branch_equals(&self, target: &str) {
+        Self::emit_instruction(format!("beq {target}").as_str());
+    }
+
     pub fn emit_variable_read(&self, variable: &VariableProperties) {
         Self::emit_instruction(format!("ldr x0, [fp, #{}]", variable.get_offset()).as_str());
     }
@@ -63,9 +69,13 @@ impl Aarch64InstructionEmitter {
         Self::emit_instruction(format!("str x0, [fp, #{}]", variable.get_offset()).as_str());
     }
 
-    pub fn emit_comparison(&self, condition: &str) {
-        Self::emit_instruction("cmp x0, x1");
+    pub fn emit_conditional_set(&self, condition: &str) {
+        self.emit_comparison("x0", "x1");
         Self::emit_instruction(format!("cset x0, {condition}").as_str());
+    }
+
+    pub fn emit_comparison(&self, a: &str, b: &str) {
+        Self::emit_instruction(format!("cmp {a}, {b}").as_str());
     }
 
     pub fn emit_label(&self, label: &str) {

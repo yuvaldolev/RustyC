@@ -1,4 +1,4 @@
-use std::mem;
+use std::{mem, rc::Rc};
 
 use rustyc_ast::{
     BinaryOperator, Block, Expression, ExpressionKind, FunctionItem, Item, ItemKind, Statement,
@@ -44,90 +44,102 @@ impl Parser {
         ))
     }
 
-    fn parse_function(&mut self) -> rustyc_diagnostics::Result<FunctionItem> {
+    fn parse_function(&mut self) -> rustyc_diagnostics::Result<Rc<FunctionItem>> {
         let body = self.parse_block()?;
-        let function = FunctionItem::new(body, self.local_variables.clone());
+        let function = Rc::new(FunctionItem::new(body, self.local_variables.clone()));
         self.local_variables.clear();
 
         Ok(function)
     }
 
-    fn parse_block(&mut self) -> rustyc_diagnostics::Result<Block> {
+    fn parse_block(&mut self) -> rustyc_diagnostics::Result<Rc<Block>> {
         let low = self.token.get_span().clone();
 
         self.expect_open_brace()?;
 
-        let mut statements: Vec<Statement> = Vec::new();
+        let mut statements: Vec<Rc<Statement>> = Vec::new();
 
         while !self.eat_close_brace() {
             let statement = self.parse_statement()?;
             statements.push(statement);
         }
 
-        Ok(Block::new(statements, self.compute_span(&low)))
+        Ok(Rc::new(Block::new(statements, self.compute_span(&low))))
     }
 
-    fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
-        if self.check_keyword(Keyword::Return) {
-            return self.parse_return_statement();
-        }
-
-        if self.check_open_brace() {
-            return self.parse_compound_statement();
-        }
-
-        self.parse_expression_statement()
-    }
-
-    fn parse_compound_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
-        let low = self.token.get_span().clone();
-        let block = self.parse_block()?;
-
-        Ok(Statement::new(
-            StatementKind::Compound(block),
-            self.compute_span(&low),
-        ))
-    }
-
-    fn parse_return_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
+    fn parse_statement(&mut self) -> rustyc_diagnostics::Result<Rc<Statement>> {
         let low = self.token.get_span().clone();
 
+        let kind = if self.check_keyword(Keyword::Return) {
+            self.parse_return_statement()?
+        } else if self.check_keyword(Keyword::If) {
+            self.parse_if_statement()?
+        } else if self.check_open_brace() {
+            self.parse_compound_statement()?
+        } else {
+            self.parse_expression_statement()?
+        };
+
+        Ok(Rc::new(Statement::new(kind, self.compute_span(&low))))
+    }
+
+    fn parse_return_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
         self.expect_keyword(Keyword::Return)?;
 
         let expression = self.parse_expression()?;
         self.expect_semicolon()?;
 
-        Ok(Statement::new(
-            StatementKind::Return(expression),
-            self.compute_span(&low),
+        Ok(StatementKind::Return(expression))
+    }
+
+    fn parse_if_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
+        self.expect_keyword(Keyword::If)?;
+
+        self.expect_open_parenthesis()?;
+        let condition_expression = self.parse_expression()?;
+        self.expect_close_parenthesis()?;
+
+        let then_statement = self.parse_statement()?;
+
+        let else_statement = if self.eat_keyword(Keyword::Else) {
+            Some(self.parse_statement()?)
+        } else {
+            None
+        };
+
+        Ok(StatementKind::If(
+            condition_expression,
+            then_statement,
+            else_statement,
         ))
     }
 
-    fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<Statement> {
+    fn parse_compound_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
+        let block = self.parse_block()?;
+        Ok(StatementKind::Compound(block))
+    }
+
+    fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
         let low = self.token.get_span().clone();
 
         if self.eat_semicolon() {
-            let span = self.compute_span(&low);
-            return Ok(Statement::new(
-                StatementKind::Compound(Block::new(Vec::new(), span.clone())),
-                span,
-            ));
+            return Ok(StatementKind::Compound(Rc::new(Block::new(
+                Vec::new(),
+                self.compute_span(&low),
+            ))));
         }
 
         let expression = self.parse_expression()?;
         self.expect_semicolon()?;
 
-        Ok(Statement::new(
-            StatementKind::Expression(expression),
-            self.compute_span(&low),
-        ))
+        Ok(StatementKind::Expression(expression))
     }
 
-    fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         self.parse_assignment()
     }
 
-    fn parse_assignment(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_assignment(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         let low = self.token.get_span().clone();
 
         let mut expression = self.parse_equality()?;
@@ -140,7 +152,7 @@ impl Parser {
         Ok(expression)
     }
 
-    fn parse_equality(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_equality(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         let low = self.token.get_span().clone();
 
         let mut expression = self.parse_relational()?;
@@ -166,7 +178,7 @@ impl Parser {
         Ok(expression)
     }
 
-    fn parse_relational(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_relational(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         let low = self.token.get_span().clone();
 
         let mut expression = self.parse_addition()?;
@@ -214,7 +226,7 @@ impl Parser {
         Ok(expression)
     }
 
-    fn parse_addition(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_addition(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         let low = self.token.get_span().clone();
 
         let mut expression = self.parse_multiplication()?;
@@ -240,7 +252,7 @@ impl Parser {
         Ok(expression)
     }
 
-    fn parse_multiplication(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_multiplication(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         let low = self.token.get_span().clone();
 
         let mut expression = self.parse_unary()?;
@@ -266,7 +278,7 @@ impl Parser {
         Ok(expression)
     }
 
-    fn parse_unary(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_unary(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         let low = self.token.get_span().clone();
 
         if self.eat_plus() {
@@ -281,7 +293,7 @@ impl Parser {
         self.parse_primary()
     }
 
-    fn parse_primary(&mut self) -> rustyc_diagnostics::Result<Box<Expression>> {
+    fn parse_primary(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
         let low = self.token.get_span().clone();
 
         if self.eat_open_parenthesis() {
@@ -310,42 +322,52 @@ impl Parser {
 
     fn new_assignment_expression(
         &self,
-        left: Box<Expression>,
-        right: Box<Expression>,
+        left: Rc<Expression>,
+        right: Rc<Expression>,
         low: &Span,
-    ) -> Box<Expression> {
+    ) -> Rc<Expression> {
         self.new_expression(ExpressionKind::Assignment(left, right), low)
     }
 
     fn new_binary_expression(
         &self,
         operator: BinaryOperator,
-        left: Box<Expression>,
-        right: Box<Expression>,
+        left: Rc<Expression>,
+        right: Rc<Expression>,
         low: &Span,
-    ) -> Box<Expression> {
+    ) -> Rc<Expression> {
         self.new_expression(ExpressionKind::Binary(operator, left, right), low)
     }
 
     fn new_unary_expression(
         &self,
         operator: UnaryOperator,
-        right: Box<Expression>,
+        right: Rc<Expression>,
         low: &Span,
-    ) -> Box<Expression> {
+    ) -> Rc<Expression> {
         self.new_expression(ExpressionKind::Unary(operator, right), low)
     }
 
-    fn new_variable_expression(&self, name: String, low: &Span) -> Box<Expression> {
+    fn new_variable_expression(&self, name: String, low: &Span) -> Rc<Expression> {
         self.new_expression(ExpressionKind::Variable(name), low)
     }
 
-    fn new_number_expression(&self, value: u64, low: &Span) -> Box<Expression> {
+    fn new_number_expression(&self, value: u64, low: &Span) -> Rc<Expression> {
         self.new_expression(ExpressionKind::Number(value), low)
     }
 
-    fn new_expression(&self, kind: ExpressionKind, low: &Span) -> Box<Expression> {
-        Box::new(Expression::new(kind, self.compute_span(low)))
+    fn new_expression(&self, kind: ExpressionKind, low: &Span) -> Rc<Expression> {
+        Rc::new(Expression::new(kind, self.compute_span(low)))
+    }
+
+    fn expect_open_parenthesis(&mut self) -> rustyc_diagnostics::Result<()> {
+        self.expected_tokens.clear();
+
+        if self.eat_open_parenthesis() {
+            Ok(())
+        } else {
+            Err(self.unexpected_token())
+        }
     }
 
     fn expect_close_parenthesis(&mut self) -> rustyc_diagnostics::Result<()> {
@@ -520,11 +542,6 @@ impl Parser {
         }
     }
 
-    fn bump(&mut self) {
-        self.previous_token = mem::replace(&mut self.token, self.cursor.next());
-        self.expected_tokens.clear();
-    }
-
     fn check_open_brace(&mut self) -> bool {
         self.check_open_delimiter(DelimiterToken::Brace)
     }
@@ -544,6 +561,11 @@ impl Parser {
         // TODO: Add a `TokenCategory` enum and save expected tokens as instances of
         // this enum. Then add a the keyword to the expected tokens.
         self.token.is_keyword(&keyword)
+    }
+
+    fn bump(&mut self) {
+        self.previous_token = mem::replace(&mut self.token, self.cursor.next());
+        self.expected_tokens.clear();
     }
 
     fn compute_span(&self, low: &Span) -> Span {
