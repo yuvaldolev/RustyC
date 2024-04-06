@@ -160,6 +160,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_source_index_single_source() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_empty_lexer()?;
+
+        assert_eq!(lexer.source_index(0), 0);
+        assert_eq!(lexer.source_index(10), 10);
+        assert_eq!(lexer.source_index(12), 12);
+        assert_eq!(lexer.source_index(3), 3);
+
+        Ok(())
+    }
+
+    #[test]
     fn test_source_from_empty_in_bounds() -> rustyc_diagnostics::Result<()> {
         let lexer = make_empty_lexer()?;
 
