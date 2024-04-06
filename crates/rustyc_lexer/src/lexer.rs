@@ -160,6 +160,23 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_source_from_to_in_bounds() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_non_empty_lexer()?;
+
+        let source = lexer.source_from_to(1, 5);
+        assert_eq!(source, "f (1");
+
+        Ok(())
+    }
+
+    #[test]
+    #[should_panic(expected = "byte index 15 is out of bounds of")]
+    fn test_source_from_to_out_of_bounds() {
+        let lexer = make_non_empty_lexer().unwrap();
+        lexer.source_from_to(1, 15);
+    }
+
+    #[test]
     fn test_span_from_empty() -> rustyc_diagnostics::Result<()> {
         let lexer = make_empty_lexer()?;
 
@@ -198,16 +215,6 @@ mod tests {
 
         Ok(())
     }
-
-    // #[test]
-    // fn test_span_from_end() -> rustyc_diagnostics::Result<()> {
-    //     let lexer = Lexer::new("if (1) {}")?;
-    //     lexer.lex()?;
-    //
-    //     let span = lexer.span_from(3);
-    //     assert_eq!(span.get_low(), 0);
-    //     Ok(())
-    // }
 
     fn make_empty_lexer() -> rustyc_diagnostics::Result<Lexer<'static>> {
         make_lexer("")
