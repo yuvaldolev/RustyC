@@ -1,6 +1,6 @@
 use std::cmp;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Span {
     low: usize,
     high: usize,

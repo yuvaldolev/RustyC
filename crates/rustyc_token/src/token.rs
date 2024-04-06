@@ -2,7 +2,7 @@ use rustyc_span::Span;
 
 use crate::{Keyword, TokenKind};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Token {
     kind: TokenKind,
     span: Span,
