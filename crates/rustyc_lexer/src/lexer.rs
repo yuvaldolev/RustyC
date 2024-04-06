@@ -160,6 +160,57 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_source_from_empty_in_bounds() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_empty_lexer()?;
+
+        let source = lexer.source_from(0);
+        assert_eq!(source, "");
+
+        Ok(())
+    }
+
+    #[test]
+    #[should_panic(expected = "byte index 15 is out of bounds of")]
+    fn test_source_from_empty_out_of_bounds() {
+        let lexer = make_empty_lexer().unwrap();
+        lexer.source_from(15);
+    }
+
+    #[test]
+    fn test_source_from_non_empty_in_bounds() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_non_empty_lexer()?;
+
+        let source = lexer.source_from(0);
+        assert_eq!(source, "if");
+
+        Ok(())
+    }
+
+    #[test]
+    #[should_panic(expected = "byte index 15 is out of bounds of")]
+    fn test_source_from_non_empty_out_of_bounds() {
+        let lexer = make_non_empty_lexer().unwrap();
+        lexer.source_from(15);
+    }
+
+    #[test]
+    fn test_source_from_non_empty_consumed_in_bounds() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_non_empty_consumed_lexer()?;
+
+        let source = lexer.source_from(2);
+        assert_eq!(source, " (1) {}");
+
+        Ok(())
+    }
+
+    #[test]
+    #[should_panic(expected = "byte index 15 is out of bounds of")]
+    fn test_source_from_non_empty_consumed_out_of_bounds() {
+        let lexer = make_non_empty_consumed_lexer().unwrap();
+        lexer.source_from(15);
+    }
+
+    #[test]
     fn test_source_from_to_in_bounds() -> rustyc_diagnostics::Result<()> {
         let lexer = make_non_empty_lexer()?;
 
@@ -188,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn test_span_from_non_empty_initialization() -> rustyc_diagnostics::Result<()> {
+    fn test_span_from_non_empty() -> rustyc_diagnostics::Result<()> {
         let lexer = make_non_empty_lexer()?;
 
         let span = lexer.span_from(0);
@@ -199,15 +250,8 @@ mod tests {
     }
 
     #[test]
-    fn test_span_from_non_empty_end() -> rustyc_diagnostics::Result<()> {
-        let mut lexer = make_non_empty_lexer()?;
-
-        loop {
-            match lexer.token.get_kind() {
-                TokenKind::Eof => break,
-                _ => lexer.bump(true)?,
-            };
-        }
+    fn test_span_from_non_empty_consumed() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_non_empty_consumed_lexer()?;
 
         let span = lexer.span_from(0);
         assert_eq!(span.get_low(), 0);
@@ -224,8 +268,30 @@ mod tests {
         make_lexer("if (1) {}")
     }
 
+    fn make_non_empty_consumed_lexer() -> rustyc_diagnostics::Result<Lexer<'static>> {
+        make_consumed_lexer("if (1) {}")
+    }
+
+    fn make_consumed_lexer(source: &str) -> rustyc_diagnostics::Result<Lexer> {
+        let mut lexer = make_lexer(source)?;
+        lex_all(&mut lexer)?;
+
+        Ok(lexer)
+    }
+
     fn make_lexer(source: &str) -> rustyc_diagnostics::Result<Lexer> {
         let lexer = Lexer::new(source)?;
         Ok(lexer)
+    }
+
+    fn lex_all(lexer: &mut Lexer) -> rustyc_diagnostics::Result<()> {
+        loop {
+            match lexer.token.get_kind() {
+                TokenKind::Eof => break,
+                _ => lexer.bump(true)?,
+            };
+        }
+
+        Ok(())
     }
 }
