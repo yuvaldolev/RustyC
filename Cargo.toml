@@ -7,3 +7,15 @@ edition = "2021"
 anyhow = "1.0.77"
 clap = { version = "4.4.11", features = ["derive"] }
 rustyc_driver = { path = "crates/rustyc_driver" }
+
+[workspace]
+members = [
+  "crates/rustyc_ast",
+  "crates/rustyc_diagnostics",
+  "crates/rustyc_lexer",
+  "crates/rustyc_span",
+  "crates/rustyc_code_generator",
+  "crates/rustyc_driver",
+  "crates/rustyc_parser",
+  "crates/rustyc_token",
+]

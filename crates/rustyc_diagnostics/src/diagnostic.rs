@@ -2,6 +2,7 @@ use rustyc_span::Span;
 
 use crate::{diagnostic_kind::DiagnosticKind, error};
 
+#[derive(Debug)]
 pub struct Diagnostic {
     kind: DiagnosticKind,
     span: Span,

@@ -154,3 +154,71 @@ impl<'a> Lexer<'a> {
         Span::new(start, self.position)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_span_from_empty() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_empty_lexer()?;
+
+        let span = lexer.span_from(0);
+        assert_eq!(span.get_low(), 0);
+        assert_eq!(span.get_high(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_span_from_non_empty_initialization() -> rustyc_diagnostics::Result<()> {
+        let lexer = make_non_empty_lexer()?;
+
+        let span = lexer.span_from(0);
+        assert_eq!(span.get_low(), 0);
+        assert_eq!(span.get_high(), 2);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_span_from_non_empty_end() -> rustyc_diagnostics::Result<()> {
+        let mut lexer = make_non_empty_lexer()?;
+
+        loop {
+            match lexer.token.get_kind() {
+                TokenKind::Eof => break,
+                _ => lexer.bump(true)?,
+            };
+        }
+
+        let span = lexer.span_from(0);
+        assert_eq!(span.get_low(), 0);
+        assert_eq!(span.get_high(), 9);
+
+        Ok(())
+    }
+
+    // #[test]
+    // fn test_span_from_end() -> rustyc_diagnostics::Result<()> {
+    //     let lexer = Lexer::new("if (1) {}")?;
+    //     lexer.lex()?;
+    //
+    //     let span = lexer.span_from(3);
+    //     assert_eq!(span.get_low(), 0);
+    //     Ok(())
+    // }
+
+    fn make_empty_lexer() -> rustyc_diagnostics::Result<Lexer<'static>> {
+        make_lexer("")
+    }
+
+    fn make_non_empty_lexer() -> rustyc_diagnostics::Result<Lexer<'static>> {
+        make_lexer("if (1) {}")
+    }
+
+    fn make_lexer(source: &str) -> rustyc_diagnostics::Result<Lexer> {
+        let lexer = Lexer::new(source)?;
+        Ok(lexer)
+    }
+}
