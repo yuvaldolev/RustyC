@@ -157,9 +157,11 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rustyc_token::Keyword;
+
     use super::*;
 
-    macro_rules! test_new_valid {
+    macro_rules! test_new {
         ($($name:ident: $source:literal -> $expected_kind:expr, $expected_position:literal,)+) => {
             $(
                 #[test]
@@ -173,8 +175,8 @@ mod tests {
         };
     }
 
-    macro_rules! test_lex_single_token {
-        ($($name:ident: $source:literal -> $expected_token_kind:expr,)+) => {
+    macro_rules! test_lex {
+        ($($name:ident: $source:literal -> [$($expected_token:expr),+]),+) => {
             $(
                 #[test]
                 fn $name() {
@@ -182,13 +184,13 @@ mod tests {
                         Lexer::new($source).expect(format!("lexer should be successfully initialized with source '{}'", $source).as_str());
 
                     let tokens = lexer.lex().expect(format!("source '{}' should be successfully tokenized", $source).as_str());
-                    assert_eq!(tokens, vec![Token::new($expected_token_kind, Span::new(0, $source.len()))]);
+                    assert_eq!(tokens, vec![$($expected_token,)+]);
                 }
             )+
         };
     }
 
-    test_new_valid! {
+    test_new! {
         test_new_empty: "" -> TokenKind::Eof, 0,
         test_new_non_empty: "value = 15" -> TokenKind::Identifier(String::from("value")), 5,
     }
@@ -198,25 +200,113 @@ mod tests {
         assert!(Lexer::new("$value = 10").is_err());
     }
 
-    test_lex_single_token! {
-        test_lex_single_equal: "=" -> TokenKind::Equal,
-        test_lex_single_less_than: "<" -> TokenKind::LessThan,
-        test_lex_single_greater_than: ">" -> TokenKind::GreaterThan,
-        test_lex_single_not: "!" -> TokenKind::Not,
-        test_lex_single_plus: "+" -> TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
-        test_lex_single_minus: "-" -> TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
-        test_lex_single_star: "*" -> TokenKind::BinaryOperator(BinaryOperatorToken::Star),
-        test_lex_single_slash: "/" -> TokenKind::BinaryOperator(BinaryOperatorToken::Slash),
-        test_lex_single_open_parenthesis: "(" -> TokenKind::OpenDelimiter(DelimiterToken::Parenthesis),
-        test_lex_single_close_parenthesis: ")" -> TokenKind::CloseDelimiter(DelimiterToken::Parenthesis),
-        test_lex_single_open_brace: "{" -> TokenKind::OpenDelimiter(DelimiterToken::Brace),
-        test_lex_single_close_brace: "}" -> TokenKind::CloseDelimiter(DelimiterToken::Brace),
-        test_lex_single_semicolon: ";" -> TokenKind::Semicolon,
-        test_lex_single_number_1_digit: "2" -> TokenKind::Number(2),
-        test_lex_single_number_2_digits: "22" -> TokenKind::Number(22),
-        test_lex_single_number_3_digits: "222" -> TokenKind::Number(222),
-        test_lex_single_identifier_letters: "abcd" -> TokenKind::Identifier(String::from("abcd")),
-        test_lex_single_identifier_letters_digits: "a1b2c3d4" -> TokenKind::Identifier(String::from("a1b2c3d4")),
-        test_lex_single_identifier_letters_digits_underscores: "_a1b2c_3d4" -> TokenKind::Identifier(String::from("_a1b2c_3d4")),
+    test_lex! {
+        test_lex_single_equal: "=" -> [
+            Token::new(TokenKind::Equal, Span::new(0, 1))
+        ],
+        test_lex_single_less_than: "<" -> [
+            Token::new(TokenKind::LessThan, Span::new(0, 1))
+        ],
+        test_lex_single_greater_than: ">" -> [
+            Token::new(TokenKind::GreaterThan, Span::new(0, 1))
+        ],
+        test_lex_single_not: "!" -> [
+            Token::new(TokenKind::Not, Span::new(0, 1))
+        ],
+        test_lex_single_plus: "+" -> [
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_minus: "-" -> [
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_star: "*" -> [
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Star),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_slash: "/" -> [
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Slash),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_open_parenthesis: "(" -> [
+            Token::new(
+                TokenKind::OpenDelimiter(DelimiterToken::Parenthesis),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_close_parenthesis: ")" -> [
+            Token::new(
+                TokenKind::CloseDelimiter(DelimiterToken::Parenthesis),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_open_brace: "{" -> [
+            Token::new(
+                TokenKind::OpenDelimiter(DelimiterToken::Brace),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_close_brace: "}" -> [
+            Token::new(
+                TokenKind::CloseDelimiter(DelimiterToken::Brace),
+                Span::new(0, 1)
+            )
+        ],
+        test_lex_single_semicolon: ";" -> [
+            Token::new(TokenKind::Semicolon, Span::new(0, 1))
+        ],
+        test_lex_single_number_1_digit: "2" -> [
+            Token::new(TokenKind::Number(2), Span::new(0, 1))
+        ],
+        test_lex_single_number_2_digits: "22" -> [
+            Token::new(TokenKind::Number(22), Span::new(0, 2))
+        ],
+        test_lex_single_number_3_digits: "222" -> [
+            Token::new(TokenKind::Number(222), Span::new(0, 3))
+        ],
+        test_lex_single_identifier_letters: "abcd" -> [
+            Token::new(TokenKind::Identifier(String::from("abcd")), Span::new(0, 4))
+        ],
+        test_lex_single_identifier_letters_digits: "a1b2c3d4" -> [
+            Token::new(TokenKind::Identifier(String::from("a1b2c3d4")), Span::new(0, 8))
+        ],
+        test_lex_single_identifier_letters_digits_underscores: "_a1b2c_3d4" -> [
+            Token::new(TokenKind::Identifier(String::from("_a1b2c_3d4")), Span::new(0, 10))
+        ],
+        test_lex_return_0: "{ return 0; }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(2, 8)
+            ),
+            Token::new(TokenKind::Number(0), Span::new(9, 10)),
+            Token::new(TokenKind::Semicolon, Span::new(10, 11)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(12, 13))
+        ],
+        test_lex_return_42: "{ return 42; }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(2, 8)
+            ),
+            Token::new(TokenKind::Number(42), Span::new(9, 11)),
+            Token::new(TokenKind::Semicolon, Span::new(11, 12)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(13, 14))
+        ]
+    }
+
+    #[test]
+    fn test_lex_invalid() {
+        let lexer = Lexer::new("value $= 10").expect("lexer should be successfully initialized");
+        assert!(lexer.lex().is_err());
     }
 }
