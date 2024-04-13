@@ -162,7 +162,7 @@ mod tests {
     use super::*;
 
     macro_rules! test_new {
-        ($($name:ident: $source:literal -> $expected_kind:expr, $expected_position:literal,)+) => {
+        ($($name:ident: $source:literal -> $expected_kind:expr, $expected_position:literal),+) => {
             $(
                 #[test]
                 fn $name() {
@@ -192,7 +192,7 @@ mod tests {
 
     test_new! {
         test_new_empty: "" -> TokenKind::Eof, 0,
-        test_new_non_empty: "value = 15" -> TokenKind::Identifier(String::from("value")), 5,
+        test_new_non_empty: "value = 15" -> TokenKind::Identifier(String::from("value")), 5
     }
 
     #[test]
@@ -216,49 +216,49 @@ mod tests {
         test_lex_single_plus: "+" -> [
             Token::new(
                 TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_minus: "-" -> [
             Token::new(
                 TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_star: "*" -> [
             Token::new(
                 TokenKind::BinaryOperator(BinaryOperatorToken::Star),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_slash: "/" -> [
             Token::new(
                 TokenKind::BinaryOperator(BinaryOperatorToken::Slash),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_open_parenthesis: "(" -> [
             Token::new(
                 TokenKind::OpenDelimiter(DelimiterToken::Parenthesis),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_close_parenthesis: ")" -> [
             Token::new(
                 TokenKind::CloseDelimiter(DelimiterToken::Parenthesis),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_open_brace: "{" -> [
             Token::new(
                 TokenKind::OpenDelimiter(DelimiterToken::Brace),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_close_brace: "}" -> [
             Token::new(
                 TokenKind::CloseDelimiter(DelimiterToken::Brace),
-                Span::new(0, 1)
+                Span::new(0, 1),
             )
         ],
         test_lex_single_semicolon: ";" -> [
@@ -282,27 +282,136 @@ mod tests {
         test_lex_single_identifier_letters_digits_underscores: "_a1b2c_3d4" -> [
             Token::new(TokenKind::Identifier(String::from("_a1b2c_3d4")), Span::new(0, 10))
         ],
-        test_lex_return_0: "{ return 0; }" -> [
+        test_lex_block_return_0: "{ return 0; }" -> [
             Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
             Token::new(
                 TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
-                Span::new(2, 8)
+                Span::new(2, 8),
             ),
             Token::new(TokenKind::Number(0), Span::new(9, 10)),
             Token::new(TokenKind::Semicolon, Span::new(10, 11)),
             Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(12, 13))
         ],
-        test_lex_return_42: "{ return 42; }" -> [
+        test_lex_block_return_42: "{ return 42; }" -> [
             Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
             Token::new(
                 TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
-                Span::new(2, 8)
+                Span::new(2, 8),
             ),
             Token::new(TokenKind::Number(42), Span::new(9, 11)),
             Token::new(TokenKind::Semicolon, Span::new(11, 12)),
             Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(13, 14))
+        ],
+        test_lex_block_return_3_plus_2: "{ return 3 + 2; }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(2, 8),
+            ),
+            Token::new(TokenKind::Number(3), Span::new(9, 10)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
+                Span::new(11, 12),
+            ),
+            Token::new(TokenKind::Number(2), Span::new(13, 14)),
+            Token::new(TokenKind::Semicolon, Span::new(14, 15)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(16, 17))
+        ],
+        test_lex_block_return_5_plus_20_minus_4: "{ return 5+20-4; }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(2, 8),
+            ),
+            Token::new(TokenKind::Number(5), Span::new(9, 10)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
+                Span::new(10, 11),
+            ),
+            Token::new(TokenKind::Number(20), Span::new(11, 13)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
+                Span::new(13, 14),
+            ),
+            Token::new(TokenKind::Number(4), Span::new(14, 15)),
+            Token::new(TokenKind::Semicolon, Span::new(15, 16)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(17, 18))
+        ],
+        test_lex_block_multi_space_return_111_plus_5_minus_9: "{    return     111 +    5                              -              9       ;      }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(5, 11),
+            ),
+            Token::new(TokenKind::Number(111), Span::new(16, 19)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
+                Span::new(20, 21),
+            ),
+            Token::new(TokenKind::Number(5), Span::new(25, 26)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
+                Span::new(56, 57),
+            ),
+            Token::new(TokenKind::Number(9), Span::new(71, 72)),
+            Token::new(TokenKind::Semicolon, Span::new(79, 80)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(86, 87))
+        ],
+        test_lex_block_return_8_star_7: "{ return 8* 7; }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(2, 8),
+            ),
+            Token::new(TokenKind::Number(8), Span::new(9, 10)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Star),
+                Span::new(10, 11),
+            ),
+            Token::new(TokenKind::Number(7), Span::new(12, 13)),
+            Token::new(TokenKind::Semicolon, Span::new(13, 14)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(15, 16))
+        ],
+        test_lex_block_return_5_plus_6_star_7: " { return 5 + 6 * 7; }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(1, 2)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(3, 9),
+            ),
+            Token::new(TokenKind::Number(5), Span::new(10, 11)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Plus),
+                Span::new(12, 13),
+            ),
+            Token::new(TokenKind::Number(6), Span::new(14, 15)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Star),
+                Span::new(16, 17),
+            ),
+            Token::new(TokenKind::Number(7), Span::new(18, 19)),
+            Token::new(TokenKind::Semicolon, Span::new(19, 20)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(21, 22))
+        ],
+        test_lex_block_return_200_slash_2: "{   return 200 /2; }" -> [
+            Token::new(TokenKind::OpenDelimiter(DelimiterToken::Brace), Span::new(0, 1)),
+            Token::new(
+                TokenKind::Identifier(Keyword::Return.to_string().to_lowercase()),
+                Span::new(4, 10),
+            ),
+            Token::new(TokenKind::Number(200), Span::new(11, 14)),
+            Token::new(
+                TokenKind::BinaryOperator(BinaryOperatorToken::Slash),
+                Span::new(15, 16),
+            ),
+            Token::new(TokenKind::Number(2), Span::new(16, 17)),
+            Token::new(TokenKind::Semicolon, Span::new(17, 18)),
+            Token::new(TokenKind::CloseDelimiter(DelimiterToken::Brace), Span::new(19, 20))
         ]
     }
+
+    // TODO:
+    // 1. glue - valid + invalid
+    // 2. multi-line
 
     #[test]
     fn test_lex_invalid() {
