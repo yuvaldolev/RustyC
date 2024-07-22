@@ -5,31 +5,43 @@ TESTS_DIRECTORY="$(dirname $SCRIPT_PATH)"
 PROJECT_DIRECTORY="$(dirname $TESTS_DIRECTORY)"
 RUSTYC_PATH="$PROJECT_DIRECTORY/target/debug/rustyc"
 
-RESULT=1
+FAILED_TESTS_COUNT=0
+
+print_bright_green() {
+    echo -e "\033[1;32m$1\033[0m"
+}
+
+print_bright_red() {
+    echo -e "\033[1;31m$1\033[0m"
+}
+
+print_red() {
+    echo -e "\033[0;31m$1\033[0m"
+}
 
 fail() {
-    RESULT=0
+    FAILED_TESTS_COUNT=$((FAILED_TESTS_COUNT + 1))
 }
 
 assert() {
     local expected="$1"
     local input="$2"
 
-    $RUSTYC_PATH -- "$input" > test.s
+    $RUSTYC_PATH "$input" > test.s
     local rustc_status="$?"
     if [[ 0 != $rustc_status ]]; then
         fail
         return
     fi
 
-    clang -o test test.s 
+    clang -o test test.s test_functions.c
     ./test
     local actual="$?"
 
     if [[ "$actual" == "$expected" ]]; then
         echo "$input => $actual"
     else
-        echo "$input => expected $expected, got $actual"
+        print_red "$input => expected $expected, got $actual"
         fail
     fi
 }
@@ -106,13 +118,24 @@ assert 55 "{ i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }"
 assert 3 "{ for (;;) {return 3;} return 5; }"
 
 assert 10 "{ i = 0; while (i < 10) { i = i + 1; } return i; }"
-assert 100 "{ i = 0; j = 0; while (i < 10) { j = j + 10; i = i + 1; } return j; }"
+assert 10 "{ i = 0; j = 0; while (i < 10) { j = j + 10; i = i + 1; } return j; }"
+
+assert 3 "{ return ret3(); }"
+assert 5 "{ return ret5(); }"
 
 popd >/dev/null
 
-if [[ 1 == $RESULT ]]; then
-    echo OK
+echo
+
+if [[ 0 == $FAILED_TESTS_COUNT ]]; then
+    print_bright_green OK
     exit 0
+fi
+
+if [[ 1 == $FAILED_TESTS_COUNT ]]; then
+    print_bright_red "1 TEST FAILED"
+else
+    print_bright_red "$FAILED_TESTS_COUNT TESTS FAILED"
 fi
 
 exit 1

@@ -41,7 +41,7 @@ impl FunctionGenerator {
         self.instruction_emitter
             .emit_label(self.function.get_name());
 
-        self.instruction_emitter.emit_push("fp");
+        self.instruction_emitter.emit_push_pair("fp", "lr");
         self.instruction_emitter.emit_move("sp", "fp");
         self.instruction_emitter.emit_subtract(
             "sp",
@@ -54,7 +54,7 @@ impl FunctionGenerator {
         self.instruction_emitter.emit_label(".L.return");
 
         self.instruction_emitter.emit_move("fp", "sp");
-        self.instruction_emitter.emit_pop("fp");
+        self.instruction_emitter.emit_pop_pair("fp", "lr");
         self.instruction_emitter.emit_return();
     }
 }

@@ -20,7 +20,7 @@
                 }
             },
             "args": [
-                "return 0;"
+                "{ return ret3(); }"
             ],
             "cwd": "${workspaceFolder}"
         },

@@ -38,6 +38,7 @@ impl ExpressionGenerator {
             }
             ExpressionKind::Variable(variable) => self.generate_variable_expression(variable),
             ExpressionKind::Number(number) => self.generate_number_expression(*number),
+            ExpressionKind::FunctionCall(name) => self.generate_function_call_expression(name),
         }
 
         Ok(())
@@ -116,5 +117,9 @@ impl ExpressionGenerator {
     fn generate_number_expression(&self, number: u64) {
         self.instruction_emitter
             .emit_move(format!("#{number}").as_str(), "x0");
+    }
+
+    fn generate_function_call_expression(&self, name: &str) {
+        self.instruction_emitter.emit_branch_link(name);
     }
 }

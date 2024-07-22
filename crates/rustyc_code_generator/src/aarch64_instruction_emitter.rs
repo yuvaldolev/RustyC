@@ -61,6 +61,10 @@ impl Aarch64InstructionEmitter {
         Self::emit_instruction(format!("beq {target}").as_str());
     }
 
+    pub fn emit_branch_link(&self, target: &str) {
+        Self::emit_instruction(format!("bl {target}").as_str());
+    }
+
     pub fn emit_variable_read(&self, variable: &VariableProperties) {
         Self::emit_instruction(format!("ldr x0, [fp, #{}]", variable.get_offset()).as_str());
     }

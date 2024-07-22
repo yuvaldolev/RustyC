@@ -361,6 +361,11 @@ impl Parser {
         }
 
         if let Some(identifier) = self.eat_identifier() {
+            if self.eat_open_parenthesis() {
+                self.expect_close_parenthesis()?;
+                return Ok(self.new_function_call_expression(identifier, &low));
+            }
+
             if !self.local_variables.contains(&identifier) {
                 self.local_variables.push(identifier.clone());
             }
@@ -412,6 +417,10 @@ impl Parser {
 
     fn new_number_expression(&self, value: u64, low: &Span) -> Rc<Expression> {
         self.new_expression(ExpressionKind::Number(value), low)
+    }
+
+    fn new_function_call_expression(&self, name: String, low: &Span) -> Rc<Expression> {
+        self.new_expression(ExpressionKind::FunctionCall(name), low)
     }
 
     fn new_expression(&self, kind: ExpressionKind, low: &Span) -> Rc<Expression> {
