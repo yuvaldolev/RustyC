@@ -9,5 +9,5 @@ pub enum ExpressionKind {
     Unary(UnaryOperator, Rc<Expression>),
     Variable(String),
     Number(u64),
-    FunctionCall(String),
+    FunctionCall(String, Vec<Rc<Expression>>),
 }

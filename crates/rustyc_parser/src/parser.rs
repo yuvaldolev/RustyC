@@ -362,8 +362,7 @@ impl Parser {
 
         if let Some(identifier) = self.eat_identifier() {
             if self.eat_open_parenthesis() {
-                self.expect_close_parenthesis()?;
-                return Ok(self.new_function_call_expression(identifier, &low));
+                return self.parse_function_call(identifier, &low);
             }
 
             if !self.local_variables.contains(&identifier) {
@@ -381,6 +380,37 @@ impl Parser {
             rustyc_diagnostics::Error::ExpressionExpected,
             self.token.get_span().clone(),
         ))
+    }
+
+    fn parse_function_call(
+        &mut self,
+        name: String,
+        low: &Span,
+    ) -> rustyc_diagnostics::Result<Rc<Expression>> {
+        let arguments = if self.check_close_parenthesis() {
+            Vec::new()
+        } else {
+            self.parse_function_call_arguments()?
+        };
+
+        self.expect_close_parenthesis()?;
+
+        Ok(self.new_function_call_expression(name, arguments, low))
+    }
+
+    fn parse_function_call_arguments(&mut self) -> rustyc_diagnostics::Result<Vec<Rc<Expression>>> {
+        let mut arguments: Vec<Rc<Expression>> = Vec::new();
+
+        loop {
+            let argument = self.parse_assignment()?;
+            arguments.push(argument);
+
+            if !self.eat_comma() {
+                break;
+            }
+        }
+
+        Ok(arguments)
     }
 
     fn new_assignment_expression(
@@ -419,8 +449,13 @@ impl Parser {
         self.new_expression(ExpressionKind::Number(value), low)
     }
 
-    fn new_function_call_expression(&self, name: String, low: &Span) -> Rc<Expression> {
-        self.new_expression(ExpressionKind::FunctionCall(name), low)
+    fn new_function_call_expression(
+        &self,
+        name: String,
+        arguments: Vec<Rc<Expression>>,
+        low: &Span,
+    ) -> Rc<Expression> {
+        self.new_expression(ExpressionKind::FunctionCall(name, arguments), low)
     }
 
     fn new_expression(&self, kind: ExpressionKind, low: &Span) -> Rc<Expression> {
@@ -555,6 +590,10 @@ impl Parser {
 
     fn eat_semicolon(&mut self) -> bool {
         self.eat(TokenKind::Semicolon)
+    }
+
+    fn eat_comma(&mut self) -> bool {
+        self.eat(TokenKind::Comma)
     }
 
     fn eat_identifier(&mut self) -> Option<String> {

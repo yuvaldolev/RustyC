@@ -12,6 +12,7 @@ pub enum RawTokenKind {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    Comma,
     Number,
     Identifier,
     Whitespace,

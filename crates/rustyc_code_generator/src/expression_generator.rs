@@ -3,6 +3,8 @@ use std::{collections::HashMap, rc::Rc};
 use rustyc_ast::{BinaryOperator, Expression, ExpressionKind, UnaryOperator};
 use rustyc_diagnostics::Diagnostic;
 
+const ARGUMENT_REGISTERS: [&str; 8] = ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7"];
+
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, variable_properties::VariableProperties,
 };
@@ -38,7 +40,9 @@ impl ExpressionGenerator {
             }
             ExpressionKind::Variable(variable) => self.generate_variable_expression(variable),
             ExpressionKind::Number(number) => self.generate_number_expression(*number),
-            ExpressionKind::FunctionCall(name) => self.generate_function_call_expression(name),
+            ExpressionKind::FunctionCall(name, arguments) => {
+                self.generate_function_call_expression(name, arguments)?
+            }
         }
 
         Ok(())
@@ -119,7 +123,25 @@ impl ExpressionGenerator {
             .emit_move(format!("#{number}").as_str(), "x0");
     }
 
-    fn generate_function_call_expression(&self, name: &str) {
+    fn generate_function_call_expression(
+        &self,
+        name: &str,
+        arguments: &[Rc<Expression>],
+    ) -> rustyc_diagnostics::Result<()> {
+        for argument in arguments {
+            let argument_expression_generator =
+                Self::new(Rc::clone(argument), Rc::clone(&self.local_variables));
+            argument_expression_generator.generate()?;
+            self.instruction_emitter.emit_push("x0");
+        }
+
+        for argument_index in (0..arguments.len()).rev() {
+            self.instruction_emitter
+                .emit_pop(ARGUMENT_REGISTERS[argument_index]);
+        }
+
         self.instruction_emitter.emit_branch_link(name);
+
+        Ok(())
     }
 }

@@ -48,6 +48,7 @@ impl<'a> RawTokenCursor<'a> {
             '{' => RawTokenKind::OpenBrace,
             '}' => RawTokenKind::CloseBrace,
             ';' => RawTokenKind::Semicolon,
+            ',' => RawTokenKind::Comma,
             _ => RawTokenKind::Unknown,
         };
 

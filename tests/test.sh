@@ -28,8 +28,10 @@ assert() {
     local input="$2"
 
     $RUSTYC_PATH "$input" > test.s
-    local rustc_status="$?"
-    if [[ 0 != $rustc_status ]]; then
+    local rustyc_status="$?"
+    if [[ 0 != $rustyc_status ]]; then
+        print_red "rustyc failed with status $rustyc_status"
+        echo
         fail
         return
     fi
@@ -118,10 +120,15 @@ assert 55 "{ i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }"
 assert 3 "{ for (;;) {return 3;} return 5; }"
 
 assert 10 "{ i = 0; while (i < 10) { i = i + 1; } return i; }"
-assert 10 "{ i = 0; j = 0; while (i < 10) { j = j + 10; i = i + 1; } return j; }"
+assert 100 "{ i = 0; j = 0; while (i < 10) { j = j + 10; i = i + 1; } return j; }"
 
 assert 3 "{ return ret3(); }"
 assert 5 "{ return ret5(); }"
+
+assert 8 "{ return add(3, 5); }"
+assert 2 "{ return sub(5, 3); }"
+assert 21 "{ return add6(1, 2, 3, 4, 5, 6); }"
+assert 10 "{ return sub8(100, 50, 25, 5, 4, 3, 2, 1); }"
 
 popd >/dev/null
 

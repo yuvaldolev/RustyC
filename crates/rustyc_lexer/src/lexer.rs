@@ -99,6 +99,7 @@ impl<'a> Lexer<'a> {
                 RawTokenKind::OpenBrace => TokenKind::OpenDelimiter(DelimiterToken::Brace),
                 RawTokenKind::CloseBrace => TokenKind::CloseDelimiter(DelimiterToken::Brace),
                 RawTokenKind::Semicolon => TokenKind::Semicolon,
+                RawTokenKind::Comma => TokenKind::Comma,
                 RawTokenKind::Number => self.lex_number(start)?,
                 RawTokenKind::Identifier => self.lex_identifier(start),
                 RawTokenKind::Whitespace => {
