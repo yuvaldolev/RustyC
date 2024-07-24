@@ -1,25 +1,27 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use rustyc_ast::{FunctionItem, Item, ItemKind};
 
 use crate::{
-    function::Function, function_generator::FunctionGenerator, label_allocator::LabelAllocator,
+    aarch64_instruction_emitter::Aarch64InstructionEmitter, function_generator::FunctionGenerator,
 };
 
 pub struct ItemGenerator {
     item: Rc<Item>,
-    label_allocator: Rc<RefCell<LabelAllocator>>,
+    instruction_emitter: Aarch64InstructionEmitter,
 }
 
 impl ItemGenerator {
-    pub fn new(item: Rc<Item>, label_allocator: Rc<RefCell<LabelAllocator>>) -> Self {
+    pub fn new(item: Rc<Item>) -> Self {
         Self {
             item,
-            label_allocator,
+            instruction_emitter: Aarch64InstructionEmitter::new(),
         }
     }
 
     pub fn generate(mut self) -> rustyc_diagnostics::Result<()> {
+        self.instruction_emitter.emit_item_separator();
+
         match self.item.get_kind() {
             ItemKind::Function(function) => self.generate_function(Rc::clone(function)),
         }
@@ -28,10 +30,7 @@ impl ItemGenerator {
     fn generate_function(&mut self, item: Rc<FunctionItem>) -> rustyc_diagnostics::Result<()> {
         // TODO: In the future the function name will be parsed into the `FunctionItem`
         // struct and thus should be removed from the `Function` struct.
-        let generator = FunctionGenerator::new(
-            Function::new(String::from("_main"), item),
-            Rc::clone(&self.label_allocator),
-        );
+        let generator = FunctionGenerator::new(item);
         generator.generate()
     }
 }

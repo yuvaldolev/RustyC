@@ -5,14 +5,13 @@ use rustyc_ast::FunctionItem;
 use crate::variable_properties::VariableProperties;
 
 pub struct Function {
-    name: String, // TODO: Remove when parsed into `FunctionItem`.
     item: Rc<FunctionItem>,
     stack_size: i64,
     local_variables: Rc<HashMap<String, VariableProperties>>,
 }
 
 impl Function {
-    pub fn new(name: String, item: Rc<FunctionItem>) -> Self {
+    pub fn new(item: Rc<FunctionItem>) -> Self {
         let mut local_variables: HashMap<String, VariableProperties> = HashMap::new();
         let mut offset: i64 = 0;
 
@@ -24,15 +23,10 @@ impl Function {
         }
 
         Self {
-            name,
             item,
             stack_size: Self::align_to(offset, 16),
             local_variables: Rc::new(local_variables),
         }
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.name
     }
 
     pub fn get_item(&self) -> &FunctionItem {

@@ -1,18 +1,21 @@
 pub struct LabelAllocator {
-    // TODO: If we ever run of out of label numbers we can cache the next number
-    // according to the label prefix.
+    prefix: String,
     next: u64,
 }
 
 impl LabelAllocator {
-    pub fn new() -> Self {
-        Self { next: 0 }
+    pub fn new(prefix: String) -> Self {
+        Self { prefix, next: 0 }
     }
 
-    pub fn allocate(&mut self, name: &str) -> String {
-        let label = format!(".L.{}.{}", name, self.next);
+    pub fn allocate_unique(&mut self, name: &str) -> String {
+        let label = format!(".L.{}.{}.{}", self.prefix, name, self.next);
         self.next += 1;
 
         label
+    }
+
+    pub fn allocate_global(&self, name: &str) -> String {
+        format!(".L.{}.{}", self.prefix, name)
     }
 }

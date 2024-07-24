@@ -71,7 +71,12 @@ impl StatementGenerator {
 
     fn generate_return(&self, expression: Rc<Expression>) -> rustyc_diagnostics::Result<()> {
         self.generate_expression(expression)?;
-        self.instruction_emitter.emit_branch(".L.return");
+        self.instruction_emitter.emit_branch(
+            self.label_allocator
+                .borrow()
+                .allocate_global("return")
+                .as_str(),
+        );
 
         Ok(())
     }
@@ -82,8 +87,8 @@ impl StatementGenerator {
         then_statement: Rc<Statement>,
         else_statement: Option<Rc<Statement>>,
     ) -> rustyc_diagnostics::Result<()> {
-        let else_label = self.label_allocator.borrow_mut().allocate("else");
-        let end_label = self.label_allocator.borrow_mut().allocate("end");
+        let else_label = self.label_allocator.borrow_mut().allocate_unique("else");
+        let end_label = self.label_allocator.borrow_mut().allocate_unique("end");
 
         self.generate_expression(condition_expression)?;
         self.instruction_emitter.emit_comparison("x0", "#0");
@@ -119,8 +124,8 @@ impl StatementGenerator {
         incrementation_expression: Option<Rc<Expression>>,
         then_statement: Rc<Statement>,
     ) -> rustyc_diagnostics::Result<()> {
-        let begin_label = self.label_allocator.borrow_mut().allocate("begin");
-        let end_label = self.label_allocator.borrow_mut().allocate("end");
+        let begin_label = self.label_allocator.borrow_mut().allocate_unique("begin");
+        let end_label = self.label_allocator.borrow_mut().allocate_unique("end");
 
         if let Some(statement) = initialization_statement {
             let initialization_statement_generator = Self::new(

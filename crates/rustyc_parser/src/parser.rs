@@ -33,20 +33,34 @@ impl Parser {
         parser
     }
 
-    pub fn parse(mut self) -> rustyc_diagnostics::Result<Item> {
+    pub fn parse(mut self) -> rustyc_diagnostics::Result<Vec<Rc<Item>>> {
+        let mut items: Vec<Rc<Item>> = Vec::new();
+
+        while !self.is_eof() {
+            items.push(self.parse_item()?);
+        }
+
+        Ok(items)
+    }
+
+    fn parse_item(&mut self) -> rustyc_diagnostics::Result<Rc<Item>> {
         let low = self.token.get_span().clone();
 
         let function = self.parse_function()?;
 
-        Ok(Item::new(
+        Ok(Rc::new(Item::new(
             ItemKind::Function(function),
             self.compute_span(&low),
-        ))
+        )))
     }
 
     fn parse_function(&mut self) -> rustyc_diagnostics::Result<Rc<FunctionItem>> {
+        let name = self.expect_identifier()?;
+        self.expect_open_parenthesis()?;
+        self.expect_close_parenthesis()?;
+
         let body = self.parse_block()?;
-        let function = Rc::new(FunctionItem::new(body, self.local_variables.clone()));
+        let function = Rc::new(FunctionItem::new(name, body, self.local_variables.clone()));
         self.local_variables.clear();
 
         Ok(function)
@@ -512,6 +526,16 @@ impl Parser {
         }
     }
 
+    fn expect_identifier(&mut self) -> rustyc_diagnostics::Result<String> {
+        self.expected_tokens.clear();
+
+        if let Some(identifier) = self.eat_identifier() {
+            Ok(identifier)
+        } else {
+            Err(self.unexpected_token())
+        }
+    }
+
     fn unexpected_token(&self) -> Diagnostic {
         let error = if self.expected_tokens.len() > 1 {
             rustyc_diagnostics::Error::UnexpectedTokenMultiple(
@@ -679,6 +703,10 @@ impl Parser {
         // TODO: Add a `TokenCategory` enum and save expected tokens as instances of
         // this enum. Then add a the keyword to the expected tokens.
         self.token.is_keyword(&keyword)
+    }
+
+    fn is_eof(&self) -> bool {
+        TokenKind::Eof == *self.token.get_kind()
     }
 
     fn bump(&mut self) {

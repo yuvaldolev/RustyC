@@ -1,14 +1,14 @@
-int ret3() asm("ret3");
+int ret3();
 
-int ret5() asm("ret5");
+int ret5();
 
-int add(int x, int y) asm("add");
+int add(int x, int y);
 
-int sub(int x, int y) asm("sub");
+int sub(int x, int y);
 
-int add6(int a, int b, int c, int d, int e, int f) asm("add6");
+int add6(int a, int b, int c, int d, int e, int f);
 
-int sub8(int a, int b, int c, int d, int e, int f, int g, int h) asm("sub8");
+int sub8(int a, int b, int c, int d, int e, int f, int g, int h);
 
 int ret3() { return 3; }
 

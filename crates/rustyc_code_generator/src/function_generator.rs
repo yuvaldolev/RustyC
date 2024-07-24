@@ -1,5 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
+use rustyc_ast::FunctionItem;
+
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, block_generator::BlockGenerator,
     function::Function, label_allocator::LabelAllocator,
@@ -12,9 +14,13 @@ pub struct FunctionGenerator {
 }
 
 impl FunctionGenerator {
-    pub fn new(function: Function, label_allocator: Rc<RefCell<LabelAllocator>>) -> Self {
+    pub fn new(function: Rc<FunctionItem>) -> Self {
+        let label_allocator = Rc::new(RefCell::new(LabelAllocator::new(
+            function.get_name().to_owned(),
+        )));
+
         Self {
-            function,
+            function: Function::new(function),
             label_allocator,
             instruction_emitter: Aarch64InstructionEmitter::new(),
         }
@@ -36,10 +42,12 @@ impl FunctionGenerator {
     }
 
     fn generate_prologue(&self) {
-        self.instruction_emitter
-            .emit_global(self.function.get_name());
-        self.instruction_emitter
-            .emit_label(self.function.get_name());
+        // TODO: This logic is only relevant to macOS.
+        // This would need to be abstracted somehow when adding support
+        // for other platforms.
+        let function_name = format!("_{}", self.function.get_item().get_name());
+        self.instruction_emitter.emit_global(&function_name);
+        self.instruction_emitter.emit_label(&function_name);
 
         self.instruction_emitter.emit_push_pair("fp", "lr");
         self.instruction_emitter.emit_move("sp", "fp");
@@ -51,7 +59,12 @@ impl FunctionGenerator {
     }
 
     fn generate_epilogue(&self) {
-        self.instruction_emitter.emit_label(".L.return");
+        self.instruction_emitter.emit_label(
+            self.label_allocator
+                .borrow()
+                .allocate_global("return")
+                .as_str(),
+        );
 
         self.instruction_emitter.emit_move("fp", "sp");
         self.instruction_emitter.emit_pop_pair("fp", "lr");

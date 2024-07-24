@@ -140,7 +140,11 @@ impl ExpressionGenerator {
                 .emit_pop(ARGUMENT_REGISTERS[argument_index]);
         }
 
-        self.instruction_emitter.emit_branch_link(name);
+        // TODO: This logic is only relevant to macOS.
+        // This would need to be abstracted somehow when adding support
+        // for other platforms.
+        let function_name = format!("_{name}");
+        self.instruction_emitter.emit_branch_link(&function_name);
 
         Ok(())
     }

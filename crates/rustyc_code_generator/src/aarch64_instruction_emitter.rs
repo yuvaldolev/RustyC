@@ -9,6 +9,10 @@ impl Aarch64InstructionEmitter {
         Self
     }
 
+    fn emit_instruction(instruction: &str) {
+        println!("  {}", instruction);
+    }
+
     pub fn emit_move(&self, source: &str, destination: &str) {
         Self::emit_instruction(format!("mov {destination}, {source}").as_str());
     }
@@ -92,10 +96,9 @@ impl Aarch64InstructionEmitter {
 
     pub fn emit_text_section_directive(&self) {
         println!(".text");
-        println!();
     }
 
-    fn emit_instruction(instruction: &str) {
-        println!("  {}", instruction);
+    pub fn emit_item_separator(&self) {
+        println!();
     }
 }
