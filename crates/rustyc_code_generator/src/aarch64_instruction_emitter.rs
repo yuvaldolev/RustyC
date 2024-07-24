@@ -2,15 +2,16 @@ use crate::variable_properties::VariableProperties;
 
 pub struct Aarch64InstructionEmitter;
 
+// TODO: This should be moved to a platform abstraction layer that wraps
+// instruction emitters as well as other platform attributes such as the
+// calling convention.
+const FUNCTION_PARAMETER_REGISTERS: [&str; 8] = ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7"];
+
 // TODO: All the formatting in this file can probably be done with an Arena allocator
 // instead of repeatedly allocating Strings in each `format!` invocation.
 impl Aarch64InstructionEmitter {
     pub fn new() -> Self {
         Self
-    }
-
-    fn emit_instruction(instruction: &str) {
-        println!("  {}", instruction);
     }
 
     pub fn emit_move(&self, source: &str, destination: &str) {
@@ -69,12 +70,16 @@ impl Aarch64InstructionEmitter {
         Self::emit_instruction(format!("bl {target}").as_str());
     }
 
-    pub fn emit_variable_read(&self, variable: &VariableProperties) {
-        Self::emit_instruction(format!("ldr x0, [fp, #{}]", variable.get_offset()).as_str());
+    pub fn emit_variable_read(&self, variable: &VariableProperties, register: &str) {
+        Self::emit_instruction(
+            format!("ldr {}, [fp, #{}]", register, variable.get_offset()).as_str(),
+        );
     }
 
-    pub fn emit_variable_write(&self, variable: &VariableProperties) {
-        Self::emit_instruction(format!("str x0, [fp, #{}]", variable.get_offset()).as_str());
+    pub fn emit_variable_write(&self, variable: &VariableProperties, register: &str) {
+        Self::emit_instruction(
+            format!("str {}, [fp, #{}]", register, variable.get_offset()).as_str(),
+        );
     }
 
     pub fn emit_conditional_set(&self, condition: &str) {
@@ -100,5 +105,13 @@ impl Aarch64InstructionEmitter {
 
     pub fn emit_item_separator(&self) {
         println!();
+    }
+
+    pub fn get_function_parameter_register(&self, index: usize) -> &str {
+        FUNCTION_PARAMETER_REGISTERS[index]
+    }
+
+    fn emit_instruction(instruction: &str) {
+        println!("  {}", instruction);
     }
 }

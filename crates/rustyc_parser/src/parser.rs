@@ -56,11 +56,26 @@ impl Parser {
 
     fn parse_function(&mut self) -> rustyc_diagnostics::Result<Rc<FunctionItem>> {
         let name = self.expect_identifier()?;
+
         self.expect_open_parenthesis()?;
+
+        let parameters = if self.check_close_parenthesis() {
+            Vec::new()
+        } else {
+            self.parse_function_parameters()?
+        };
+
         self.expect_close_parenthesis()?;
 
         let body = self.parse_block()?;
-        let function = Rc::new(FunctionItem::new(name, body, self.local_variables.clone()));
+
+        let function = Rc::new(FunctionItem::new(
+            name,
+            parameters,
+            body,
+            self.local_variables.clone(),
+        ));
+
         self.local_variables.clear();
 
         Ok(function)
@@ -379,6 +394,8 @@ impl Parser {
                 return self.parse_function_call(identifier, &low);
             }
 
+            // TODO: Currently, variable accesses also add a variable to the local
+            // variables list. This should only be done for variable declarations.
             if !self.local_variables.contains(&identifier) {
                 self.local_variables.push(identifier.clone());
             }
@@ -394,6 +411,22 @@ impl Parser {
             rustyc_diagnostics::Error::ExpressionExpected,
             self.token.get_span().clone(),
         ))
+    }
+
+    fn parse_function_parameters(&mut self) -> rustyc_diagnostics::Result<Vec<String>> {
+        let mut parameters: Vec<String> = Vec::new();
+
+        loop {
+            let parameter = self.expect_identifier()?;
+            self.local_variables.push(parameter.clone());
+            parameters.push(parameter);
+
+            if !self.eat_comma() {
+                break;
+            }
+        }
+
+        Ok(parameters)
     }
 
     fn parse_function_call(
@@ -416,8 +449,7 @@ impl Parser {
         let mut arguments: Vec<Rc<Expression>> = Vec::new();
 
         loop {
-            let argument = self.parse_assignment()?;
-            arguments.push(argument);
+            arguments.push(self.parse_assignment()?);
 
             if !self.eat_comma() {
                 break;

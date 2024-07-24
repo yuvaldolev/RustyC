@@ -133,6 +133,10 @@ assert 10 "main() { return sub8(100, 50, 25, 5, 4, 3, 2, 1); }"
 assert 32 "main() { return ret32(); } ret32() { return 32; }"
 assert 35 "main() { ret20_result = test_ret20(); return test_ret5() + test_ret10() + ret20_result; } test_ret5() { a = 2; b = 3; return a + b; } test_ret10() { return 10; } test_ret20() { a = 100; b = 80; return (a - b); }"
 
+assert 7 "main() { return add2(3,4); } add2(x,y) { return x+y; }"
+assert 1 "main() { return sub2(4,3); } sub2(x,y) { return x-y; }"
+assert 55 "main() { return fib(9); } fib(x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }"
+
 popd >/dev/null
 
 echo

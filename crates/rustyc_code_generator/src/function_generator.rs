@@ -29,8 +29,10 @@ impl FunctionGenerator {
     pub fn generate(self) -> rustyc_diagnostics::Result<()> {
         self.generate_prologue();
 
+        self.generate_push_parameters_to_stack();
+
         let block_generator = BlockGenerator::new(
-            self.function.get_item().get_body(),
+            self.function.get_ast().get_body(),
             self.function.get_local_variables(),
             Rc::clone(&self.label_allocator),
         );
@@ -45,7 +47,7 @@ impl FunctionGenerator {
         // TODO: This logic is only relevant to macOS.
         // This would need to be abstracted somehow when adding support
         // for other platforms.
-        let function_name = format!("_{}", self.function.get_item().get_name());
+        let function_name = format!("_{}", self.function.get_ast().get_name());
         self.instruction_emitter.emit_global(&function_name);
         self.instruction_emitter.emit_label(&function_name);
 
@@ -56,6 +58,17 @@ impl FunctionGenerator {
             self.function.get_stack_size().to_string().as_str(),
             "sp",
         );
+    }
+
+    fn generate_push_parameters_to_stack(&self) {
+        for (index, parameter) in self.function.get_ast().get_parameters().iter().enumerate() {
+            // TODO: Emit an error if the variable is not found, instead of panicking.
+            self.instruction_emitter.emit_variable_write(
+                self.function.get_local_variables().get(parameter).unwrap(),
+                self.instruction_emitter
+                    .get_function_parameter_register(index),
+            );
+        }
     }
 
     fn generate_epilogue(&self) {

@@ -3,8 +3,6 @@ use std::{collections::HashMap, rc::Rc};
 use rustyc_ast::{BinaryOperator, Expression, ExpressionKind, UnaryOperator};
 use rustyc_diagnostics::Diagnostic;
 
-const ARGUMENT_REGISTERS: [&str; 8] = ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7"];
-
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, variable_properties::VariableProperties,
 };
@@ -63,8 +61,9 @@ impl ExpressionGenerator {
         let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
         right_expression_generator.generate()?;
 
+        // TODO: Emit an error if the variable is not found, instead of panicking.
         self.instruction_emitter
-            .emit_variable_write(self.local_variables.get(variable).unwrap());
+            .emit_variable_write(self.local_variables.get(variable).unwrap(), "x0");
 
         Ok(())
     }
@@ -114,8 +113,9 @@ impl ExpressionGenerator {
     }
 
     fn generate_variable_expression(&self, variable: &str) {
+        // TODO: Emit an error if the variable is not found, instead of panicking.
         self.instruction_emitter
-            .emit_variable_read(self.local_variables.get(variable).unwrap())
+            .emit_variable_read(self.local_variables.get(variable).unwrap(), "x0");
     }
 
     fn generate_number_expression(&self, number: u64) {
@@ -136,8 +136,10 @@ impl ExpressionGenerator {
         }
 
         for argument_index in (0..arguments.len()).rev() {
-            self.instruction_emitter
-                .emit_pop(ARGUMENT_REGISTERS[argument_index]);
+            self.instruction_emitter.emit_pop(
+                self.instruction_emitter
+                    .get_function_parameter_register(argument_index),
+            );
         }
 
         // TODO: This logic is only relevant to macOS.

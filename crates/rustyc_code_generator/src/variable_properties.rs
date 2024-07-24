@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct VariableProperties {
     offset: i64,
 }
