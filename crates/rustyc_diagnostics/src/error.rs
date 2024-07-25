@@ -36,4 +36,7 @@ pub enum Error {
 
     #[error("invalid assignment expression")]
     InvalidAssignmentExpression,
+
+    #[error("not an lvalue")]
+    NotAnLvalue,
 }

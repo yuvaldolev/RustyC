@@ -28,7 +28,7 @@ impl ExpressionGenerator {
     pub fn generate(self) -> rustyc_diagnostics::Result<()> {
         match self.expression.get_kind() {
             ExpressionKind::Assignment(left, right) => {
-                self.generate_assignment_expression(left, Rc::clone(right))?
+                self.generate_assignment_expression(Rc::clone(left), Rc::clone(right))?
             }
             ExpressionKind::Binary(operator, left, right) => {
                 self.generate_binary_expression(operator, Rc::clone(left), Rc::clone(right))?
@@ -48,22 +48,18 @@ impl ExpressionGenerator {
 
     fn generate_assignment_expression(
         &self,
-        left: &Expression,
+        left: Rc<Expression>,
         right: Rc<Expression>,
     ) -> rustyc_diagnostics::Result<()> {
-        let ExpressionKind::Variable(variable) = left.get_kind() else {
-            return Err(Diagnostic::new_error(
-                rustyc_diagnostics::Error::InvalidAssignmentExpression,
-                left.get_span().clone(),
-            ));
-        };
+        self.generate_address_of(left)?;
+        self.instruction_emitter.emit_push("x0");
 
         let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
         right_expression_generator.generate()?;
 
-        // TODO: Emit an error if the variable is not found, instead of panicking.
-        self.instruction_emitter
-            .emit_variable_write(self.local_variables.get(variable).unwrap(), "x0");
+        self.instruction_emitter.emit_pop("x1");
+
+        self.instruction_emitter.emit_store("x0", "x1");
 
         Ok(())
     }
@@ -88,7 +84,9 @@ impl ExpressionGenerator {
             BinaryOperator::NotEqual => self.instruction_emitter.emit_conditional_set("ne"),
             BinaryOperator::LessThan => self.instruction_emitter.emit_conditional_set("lt"),
             BinaryOperator::LessThanOrEqual => self.instruction_emitter.emit_conditional_set("le"),
-            BinaryOperator::Add => self.instruction_emitter.emit_add("x0", "x1", "x0"),
+            BinaryOperator::Add => self
+                .instruction_emitter
+                .emit_add_registers("x0", "x1", "x0"),
             BinaryOperator::Subtract => self.instruction_emitter.emit_subtract("x0", "x1", "x0"),
             BinaryOperator::Multiply => self.instruction_emitter.emit_multiply("x0", "x1", "x0"),
             BinaryOperator::Divide => self.instruction_emitter.emit_divide("x0", "x1", "x0"),
@@ -102,11 +100,10 @@ impl ExpressionGenerator {
         operator: &UnaryOperator,
         right: Rc<Expression>,
     ) -> rustyc_diagnostics::Result<()> {
-        let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
-        right_expression_generator.generate()?;
-
         match operator {
-            UnaryOperator::Negate => self.instruction_emitter.emit_negate("x0", "x0"),
+            UnaryOperator::Negate => self.generate_negate(right)?,
+            UnaryOperator::AddressOf => self.generate_address_of(right)?,
+            UnaryOperator::Dereference => self.generate_dereference(right)?,
         }
 
         Ok(())
@@ -114,13 +111,16 @@ impl ExpressionGenerator {
 
     fn generate_variable_expression(&self, variable: &str) {
         // TODO: Emit an error if the variable is not found, instead of panicking.
-        self.instruction_emitter
-            .emit_variable_read(self.local_variables.get(variable).unwrap(), "x0");
+        self.instruction_emitter.emit_load_offset(
+            "fp",
+            self.local_variables.get(variable).unwrap().get_offset(),
+            "x0",
+        );
     }
 
     fn generate_number_expression(&self, number: u64) {
         self.instruction_emitter
-            .emit_move(format!("#{number}").as_str(), "x0");
+            .emit_move_registers(format!("#{number}").as_str(), "x0");
     }
 
     fn generate_function_call_expression(
@@ -147,6 +147,63 @@ impl ExpressionGenerator {
         // for other platforms.
         let function_name = format!("_{name}");
         self.instruction_emitter.emit_branch_link(&function_name);
+
+        Ok(())
+    }
+
+    fn generate_negate(&self, right: Rc<Expression>) -> rustyc_diagnostics::Result<()> {
+        let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
+        right_expression_generator.generate()?;
+
+        self.instruction_emitter.emit_negate("x0", "x0");
+
+        Ok(())
+    }
+
+    fn generate_address_of(&self, right: Rc<Expression>) -> rustyc_diagnostics::Result<()> {
+        match right.get_kind() {
+            ExpressionKind::Variable(variable) => self.generate_address_of_variable(variable),
+            ExpressionKind::Unary(UnaryOperator::Dereference, right) => {
+                self.generate_address_of_dereference(Rc::clone(right))?
+            }
+            _ => {
+                return Err(Diagnostic::new_error(
+                    rustyc_diagnostics::Error::NotAnLvalue,
+                    right.get_span().clone(),
+                ))
+            }
+        }
+
+        Ok(())
+    }
+
+    fn generate_dereference(&self, right: Rc<Expression>) -> rustyc_diagnostics::Result<()> {
+        let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
+        right_expression_generator.generate()?;
+
+        self.instruction_emitter.emit_load("x0", "x0");
+
+        Ok(())
+    }
+
+    fn generate_address_of_variable(&self, variable: &str) {
+        // TODO: Emit an error if the variable is not found, instead of panicking.
+        self.instruction_emitter
+            .emit_move_signed_immediate_to_register(
+                self.local_variables.get(variable).unwrap().get_offset(),
+                "x0",
+            );
+
+        self.instruction_emitter
+            .emit_add_registers("fp", "x0", "x0");
+    }
+
+    fn generate_address_of_dereference(
+        &self,
+        right: Rc<Expression>,
+    ) -> rustyc_diagnostics::Result<()> {
+        let right_expression_generator = Self::new(right, Rc::clone(&self.local_variables));
+        right_expression_generator.generate()?;
 
         Ok(())
     }

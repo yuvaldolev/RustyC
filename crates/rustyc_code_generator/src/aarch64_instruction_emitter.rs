@@ -1,5 +1,3 @@
-use crate::variable_properties::VariableProperties;
-
 pub struct Aarch64InstructionEmitter;
 
 // TODO: This should be moved to a platform abstraction layer that wraps
@@ -14,12 +12,16 @@ impl Aarch64InstructionEmitter {
         Self
     }
 
-    pub fn emit_move(&self, source: &str, destination: &str) {
+    pub fn emit_move_registers(&self, source: &str, destination: &str) {
         Self::emit_instruction(format!("mov {destination}, {source}").as_str());
     }
 
-    pub fn emit_add(&self, source_a: &str, source_b: &str, destination: &str) {
-        Self::emit_instruction(format!("add {destination}, {source_a}, {source_b}").as_str());
+    pub fn emit_move_signed_immediate_to_register(&self, source: i64, destination: &str) {
+        Self::emit_instruction(format!("mov {destination}, #{source}").as_str());
+    }
+
+    pub fn emit_add_registers(&self, register_a: &str, register_b: &str, destination: &str) {
+        Self::emit_instruction(format!("add {destination}, {register_a}, {register_b}").as_str());
     }
 
     pub fn emit_subtract(&self, source_a: &str, source_b: &str, destination: &str) {
@@ -54,6 +56,22 @@ impl Aarch64InstructionEmitter {
         Self::emit_instruction(format!("ldp {register1}, {register2}, [sp], #0x10").as_str());
     }
 
+    pub fn emit_load(&self, source: &str, destination: &str) {
+        Self::emit_instruction(format!("ldr {destination}, [{source}]").as_str());
+    }
+
+    pub fn emit_load_offset(&self, source: &str, offset: i64, destination: &str) {
+        Self::emit_instruction(format!("ldr {destination}, [{source}, #{offset}]").as_str());
+    }
+
+    pub fn emit_store(&self, source: &str, destination: &str) {
+        Self::emit_instruction(format!("str {source}, [{destination}]").as_str());
+    }
+
+    pub fn emit_store_offset(&self, source: &str, destination: &str, offset: i64) {
+        Self::emit_instruction(format!("str {source}, [{destination}, #{offset}]").as_str());
+    }
+
     pub fn emit_return(&self) {
         Self::emit_instruction("ret");
     }
@@ -68,18 +86,6 @@ impl Aarch64InstructionEmitter {
 
     pub fn emit_branch_link(&self, target: &str) {
         Self::emit_instruction(format!("bl {target}").as_str());
-    }
-
-    pub fn emit_variable_read(&self, variable: &VariableProperties, register: &str) {
-        Self::emit_instruction(
-            format!("ldr {}, [fp, #{}]", register, variable.get_offset()).as_str(),
-        );
-    }
-
-    pub fn emit_variable_write(&self, variable: &VariableProperties, register: &str) {
-        Self::emit_instruction(
-            format!("str {}, [fp, #{}]", register, variable.get_offset()).as_str(),
-        );
     }
 
     pub fn emit_conditional_set(&self, condition: &str) {

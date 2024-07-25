@@ -43,6 +43,7 @@ impl<'a> RawTokenCursor<'a> {
             '-' => RawTokenKind::Minus,
             '*' => RawTokenKind::Star,
             '/' => RawTokenKind::Slash,
+            '&' => RawTokenKind::And,
             '(' => RawTokenKind::OpenParenthesis,
             ')' => RawTokenKind::CloseParenthesis,
             '{' => RawTokenKind::OpenBrace,

@@ -90,6 +90,7 @@ impl<'a> Lexer<'a> {
                 RawTokenKind::Minus => TokenKind::BinaryOperator(BinaryOperatorToken::Minus),
                 RawTokenKind::Star => TokenKind::BinaryOperator(BinaryOperatorToken::Star),
                 RawTokenKind::Slash => TokenKind::BinaryOperator(BinaryOperatorToken::Slash),
+                RawTokenKind::And => TokenKind::BinaryOperator(BinaryOperatorToken::And),
                 RawTokenKind::OpenParenthesis => {
                     TokenKind::OpenDelimiter(DelimiterToken::Parenthesis)
                 }

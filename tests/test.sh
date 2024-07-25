@@ -135,7 +135,16 @@ assert 35 "main() { ret20_result = test_ret20(); return test_ret5() + test_ret10
 
 assert 7 "main() { return add2(3,4); } add2(x,y) { return x+y; }"
 assert 1 "main() { return sub2(4,3); } sub2(x,y) { return x-y; }"
+assert 36 "main() { return add8(1, 2, 3, 4, 5, 6, 7, 8); } add8(a, b, c, d, e, f, g, h) { return a + b + c + d + e + f + g + h; }"
 assert 55 "main() { return fib(9); } fib(x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }"
+
+assert 3 "main() { x=3; return *&x; }"
+assert 3 "main() { x=3; y=&x; z=&y; return **z; }"
+assert 5 "main() { x=3; y=5; return *(&x+8); }"
+assert 3 "main() { x=3; y=5; return *(&y-8); }"
+assert 5 "main() { x=3; y=&x; *y=5; return x; }"
+assert 7 "main() { x=3; y=5; *(&x+8)=7; return y; }"
+assert 7 "main() { x=3; y=5; *(&y-8)=7; return x; }"
 
 popd >/dev/null
 

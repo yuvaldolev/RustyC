@@ -52,7 +52,7 @@ impl FunctionGenerator {
         self.instruction_emitter.emit_label(&function_name);
 
         self.instruction_emitter.emit_push_pair("fp", "lr");
-        self.instruction_emitter.emit_move("sp", "fp");
+        self.instruction_emitter.emit_move_registers("sp", "fp");
         self.instruction_emitter.emit_subtract(
             "sp",
             self.function.get_stack_size().to_string().as_str(),
@@ -63,10 +63,15 @@ impl FunctionGenerator {
     fn generate_push_parameters_to_stack(&self) {
         for (index, parameter) in self.function.get_ast().get_parameters().iter().enumerate() {
             // TODO: Emit an error if the variable is not found, instead of panicking.
-            self.instruction_emitter.emit_variable_write(
-                self.function.get_local_variables().get(parameter).unwrap(),
+            self.instruction_emitter.emit_store_offset(
                 self.instruction_emitter
                     .get_function_parameter_register(index),
+                "fp",
+                self.function
+                    .get_local_variables()
+                    .get(parameter)
+                    .unwrap()
+                    .get_offset(),
             );
         }
     }
@@ -79,7 +84,7 @@ impl FunctionGenerator {
                 .as_str(),
         );
 
-        self.instruction_emitter.emit_move("fp", "sp");
+        self.instruction_emitter.emit_move_registers("fp", "sp");
         self.instruction_emitter.emit_pop_pair("fp", "lr");
         self.instruction_emitter.emit_return();
     }

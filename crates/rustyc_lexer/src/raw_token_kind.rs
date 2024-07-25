@@ -7,6 +7,7 @@ pub enum RawTokenKind {
     Minus,
     Star,
     Slash,
+    And,
     OpenParenthesis,
     CloseParenthesis,
     OpenBrace,

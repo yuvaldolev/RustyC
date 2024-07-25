@@ -41,6 +41,7 @@ impl fmt::Display for TokenKind {
             Self::BinaryOperator(BinaryOperatorToken::Minus) => write!(f, "-"),
             Self::BinaryOperator(BinaryOperatorToken::Star) => write!(f, "*"),
             Self::BinaryOperator(BinaryOperatorToken::Slash) => write!(f, "/"),
+            Self::BinaryOperator(BinaryOperatorToken::And) => write!(f, "&"),
             Self::OpenDelimiter(DelimiterToken::Parenthesis) => write!(f, "("),
             Self::CloseDelimiter(DelimiterToken::Parenthesis) => write!(f, ")"),
             Self::OpenDelimiter(DelimiterToken::Brace) => write!(f, "{{"),

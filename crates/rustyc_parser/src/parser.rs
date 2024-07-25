@@ -377,6 +377,16 @@ impl Parser {
             return Ok(self.new_unary_expression(UnaryOperator::Negate, right, &low));
         }
 
+        if self.eat_and() {
+            let right = self.parse_unary()?;
+            return Ok(self.new_unary_expression(UnaryOperator::AddressOf, right, &low));
+        }
+
+        if self.eat_star() {
+            let right = self.parse_unary()?;
+            return Ok(self.new_unary_expression(UnaryOperator::Dereference, right, &low));
+        }
+
         self.parse_primary()
     }
 
@@ -397,7 +407,7 @@ impl Parser {
             // TODO: Currently, variable accesses also add a variable to the local
             // variables list. This should only be done for variable declarations.
             if !self.local_variables.contains(&identifier) {
-                self.local_variables.push(identifier.clone());
+                self.local_variables.insert(0, identifier.clone());
             }
 
             return Ok(self.new_variable_expression(identifier, &low));
@@ -626,6 +636,10 @@ impl Parser {
 
     fn eat_slash(&mut self) -> bool {
         self.eat_binary_operator(BinaryOperatorToken::Slash)
+    }
+
+    fn eat_and(&mut self) -> bool {
+        self.eat_binary_operator(BinaryOperatorToken::And)
     }
 
     fn eat_open_parenthesis(&mut self) -> bool {

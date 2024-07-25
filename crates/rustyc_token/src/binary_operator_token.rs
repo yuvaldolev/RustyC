@@ -4,4 +4,5 @@ pub enum BinaryOperatorToken {
     Minus,
     Star,
     Slash,
+    And,
 }
