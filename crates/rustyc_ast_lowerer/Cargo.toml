@@ -1,0 +1,8 @@
+[package]
+name = "rustyc_ast_lowerer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rustyc_ast = { path = "../rustyc_ast" }
+rustyc_hir = { path = "../rustyc_hir" }

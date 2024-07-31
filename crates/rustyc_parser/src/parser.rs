@@ -34,13 +34,13 @@ impl Parser {
     }
 
     pub fn parse(mut self) -> rustyc_diagnostics::Result<Vec<Rc<Item>>> {
-        let mut items: Vec<Rc<Item>> = Vec::new();
+        let mut ast: Vec<Rc<Item>> = Vec::new();
 
         while !self.is_eof() {
-            items.push(self.parse_item()?);
+            ast.push(self.parse_item()?);
         }
 
-        Ok(items)
+        Ok(ast)
     }
 
     fn parse_item(&mut self) -> rustyc_diagnostics::Result<Rc<Item>> {

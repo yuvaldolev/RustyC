@@ -172,6 +172,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustyc_ast_lowerer"
+version = "0.1.0"
+dependencies = [
+ "rustyc_ast",
+ "rustyc_hir",
+]
+
+[[package]]
 name = "rustyc_code_generator"
 version = "0.1.0"
 dependencies = [
@@ -192,11 +200,19 @@ dependencies = [
 name = "rustyc_driver"
 version = "0.1.0"
 dependencies = [
+ "rustyc_ast_lowerer",
  "rustyc_code_generator",
  "rustyc_diagnostics",
  "rustyc_lexer",
  "rustyc_parser",
  "thiserror",
+]
+
+[[package]]
+name = "rustyc_hir"
+version = "0.1.0"
+dependencies = [
+ "rustyc_span",
 ]
 
 [[package]]
@@ -229,6 +245,10 @@ dependencies = [
  "enum-display",
  "rustyc_span",
 ]
+
+[[package]]
+name = "rustyc_type"
+version = "0.1.0"
 
 [[package]]
 name = "strsim"

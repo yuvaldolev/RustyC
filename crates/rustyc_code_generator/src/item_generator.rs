@@ -19,7 +19,7 @@ impl ItemGenerator {
         }
     }
 
-    pub fn generate(mut self) -> rustyc_diagnostics::Result<()> {
+    pub fn generate(self) -> rustyc_diagnostics::Result<()> {
         self.instruction_emitter.emit_item_separator();
 
         match self.item.get_kind() {
@@ -27,7 +27,7 @@ impl ItemGenerator {
         }
     }
 
-    fn generate_function(&mut self, item: Rc<FunctionItem>) -> rustyc_diagnostics::Result<()> {
+    fn generate_function(&self, item: Rc<FunctionItem>) -> rustyc_diagnostics::Result<()> {
         // TODO: In the future the function name will be parsed into the `FunctionItem`
         // struct and thus should be removed from the `Function` struct.
         let generator = FunctionGenerator::new(item);

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+rustyc_ast_lowerer = { path = "../rustyc_ast_lowerer" }
 rustyc_code_generator = { path = "../rustyc_code_generator" }
 rustyc_diagnostics = { path = "../rustyc_diagnostics" }
 rustyc_lexer = { path = "../rustyc_lexer" }

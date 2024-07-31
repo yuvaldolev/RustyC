@@ -1,3 +1,4 @@
+use rustyc_ast_lowerer::AstLowerer;
 use rustyc_code_generator::CodeGenerator;
 use rustyc_diagnostics::DiagnosticEmitter;
 use rustyc_lexer::Lexer;
@@ -34,8 +35,11 @@ impl Driver {
         let parser = Parser::new(tokens);
         let ast = parser.parse()?;
 
-        let code_generator = CodeGenerator::new(ast);
-        code_generator.generate()?;
+        let ast_lowerer = AstLowerer::new(ast);
+        let _hir = ast_lowerer.lower();
+
+        // let code_generator = CodeGenerator::new(ast);
+        // code_generator.generate()?;
 
         Ok(())
     }
