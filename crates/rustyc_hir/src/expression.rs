@@ -20,8 +20,8 @@ impl Expression {
         &self.kind
     }
 
-    pub fn get_ty(&self) -> &Ty {
-        &self.ty
+    pub fn get_ty(&self) -> Rc<Ty> {
+        Rc::clone(&self.ty)
     }
 
     pub fn get_span(&self) -> &Span {
