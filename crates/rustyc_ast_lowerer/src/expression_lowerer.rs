@@ -2,32 +2,39 @@ use std::rc::Rc;
 
 pub struct ExpressionLowerer {
     expression: Rc<rustyc_ast::Expression>,
+    ty_context: Rc<rustyc_ty::TyContext>,
 }
 
 impl ExpressionLowerer {
-    pub fn new(expression: Rc<rustyc_ast::Expression>) -> Self {
-        Self { expression }
+    pub fn new(
+        expression: Rc<rustyc_ast::Expression>,
+        ty_context: Rc<rustyc_ty::TyContext>,
+    ) -> Self {
+        Self {
+            expression,
+            ty_context,
+        }
     }
 
     pub fn lower(self) -> Rc<rustyc_hir::Expression> {
         let hir_expression_kind = match self.expression.get_kind() {
             rustyc_ast::ExpressionKind::Assignment(left, right) => {
                 rustyc_hir::ExpressionKind::Assignment(
-                    Self::lower_expression(Rc::clone(left)),
-                    Self::lower_expression(Rc::clone(right)),
+                    self.lower_expression(Rc::clone(left)),
+                    self.lower_expression(Rc::clone(right)),
                 )
             }
             rustyc_ast::ExpressionKind::Binary(operator, left, right) => {
                 rustyc_hir::ExpressionKind::Binary(
                     Self::lower_binary_operator(operator),
-                    Self::lower_expression(Rc::clone(left)),
-                    Self::lower_expression(Rc::clone(right)),
+                    self.lower_expression(Rc::clone(left)),
+                    self.lower_expression(Rc::clone(right)),
                 )
             }
             rustyc_ast::ExpressionKind::Unary(operator, right) => {
                 rustyc_hir::ExpressionKind::Unary(
                     Self::lower_unary_operator(operator),
-                    Self::lower_expression(Rc::clone(right)),
+                    self.lower_expression(Rc::clone(right)),
                 )
             }
             rustyc_ast::ExpressionKind::Variable(variable) => {
@@ -41,7 +48,7 @@ impl ExpressionLowerer {
                     name.clone(),
                     arguments
                         .iter()
-                        .map(|argument| Self::lower_expression(Rc::clone(argument)))
+                        .map(|argument| self.lower_expression(Rc::clone(argument)))
                         .collect(),
                 )
             }
@@ -49,13 +56,9 @@ impl ExpressionLowerer {
 
         Rc::new(rustyc_hir::Expression::new(
             hir_expression_kind,
+            self.ty_context.get_int(), // TODO: Modify
             self.expression.get_span().clone(),
         ))
-    }
-
-    fn lower_expression(expression: Rc<rustyc_ast::Expression>) -> Rc<rustyc_hir::Expression> {
-        let expression_lowerer = Self::new(expression);
-        expression_lowerer.lower()
     }
 
     fn lower_binary_operator(operator: &rustyc_ast::BinaryOperator) -> rustyc_hir::BinaryOperator {
@@ -79,5 +82,13 @@ impl ExpressionLowerer {
             rustyc_ast::UnaryOperator::AddressOf => rustyc_hir::UnaryOperator::AddressOf,
             rustyc_ast::UnaryOperator::Dereference => rustyc_hir::UnaryOperator::Dereference,
         }
+    }
+
+    fn lower_expression(
+        &self,
+        expression: Rc<rustyc_ast::Expression>,
+    ) -> Rc<rustyc_hir::Expression> {
+        let expression_lowerer = Self::new(expression, Rc::clone(&self.ty_context));
+        expression_lowerer.lower()
     }
 }

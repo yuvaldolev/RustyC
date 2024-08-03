@@ -20,5 +20,5 @@ members = [
   "crates/rustyc_parser",
   "crates/rustyc_span",
   "crates/rustyc_token",
-  "crates/rustyc_type",
+  "crates/rustyc_ty",
 ]

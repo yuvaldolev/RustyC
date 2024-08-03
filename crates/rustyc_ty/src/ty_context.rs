@@ -13,7 +13,7 @@ impl TyContext {
         }
     }
 
-    pub fn get_int_type(&self) -> Rc<Ty> {
+    pub fn get_int(&self) -> Rc<Ty> {
         Rc::clone(&self.int_type)
     }
 }

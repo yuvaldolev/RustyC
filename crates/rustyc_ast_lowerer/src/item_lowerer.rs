@@ -1,20 +1,23 @@
 use std::rc::Rc;
 
+use rustyc_ty::TyContext;
+
 use crate::function_lowerer::FunctionLowerer;
 
 pub struct ItemLowerer {
     item: Rc<rustyc_ast::Item>,
+    ty_context: Rc<TyContext>,
 }
 
 impl ItemLowerer {
-    pub fn new(item: Rc<rustyc_ast::Item>) -> Self {
-        Self { item }
+    pub fn new(item: Rc<rustyc_ast::Item>, ty_context: Rc<TyContext>) -> Self {
+        Self { item, ty_context }
     }
 
     pub fn lower(self) -> Rc<rustyc_hir::Item> {
         let hir_item_kind = match self.item.get_kind() {
             rustyc_ast::ItemKind::Function(function) => {
-                rustyc_hir::ItemKind::Function(Self::lower_function(Rc::clone(function)))
+                rustyc_hir::ItemKind::Function(self.lower_function(Rc::clone(function)))
             }
         };
 
@@ -24,8 +27,11 @@ impl ItemLowerer {
         ))
     }
 
-    fn lower_function(function: Rc<rustyc_ast::FunctionItem>) -> Rc<rustyc_hir::FunctionItem> {
-        let lowerer = FunctionLowerer::new(function);
+    fn lower_function(
+        &self,
+        function: Rc<rustyc_ast::FunctionItem>,
+    ) -> Rc<rustyc_hir::FunctionItem> {
+        let lowerer = FunctionLowerer::new(function, Rc::clone(&self.ty_context));
         lowerer.lower()
     }
 }

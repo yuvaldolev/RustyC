@@ -177,6 +177,7 @@ version = "0.1.0"
 dependencies = [
  "rustyc_ast",
  "rustyc_hir",
+ "rustyc_ty",
 ]
 
 [[package]]
@@ -205,6 +206,7 @@ dependencies = [
  "rustyc_diagnostics",
  "rustyc_lexer",
  "rustyc_parser",
+ "rustyc_ty",
  "thiserror",
 ]
 
@@ -213,6 +215,7 @@ name = "rustyc_hir"
 version = "0.1.0"
 dependencies = [
  "rustyc_span",
+ "rustyc_ty",
 ]
 
 [[package]]
@@ -247,7 +250,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustyc_type"
+name = "rustyc_ty"
 version = "0.1.0"
 
 [[package]]

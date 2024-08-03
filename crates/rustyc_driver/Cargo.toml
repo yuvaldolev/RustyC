@@ -9,4 +9,5 @@ rustyc_code_generator = { path = "../rustyc_code_generator" }
 rustyc_diagnostics = { path = "../rustyc_diagnostics" }
 rustyc_lexer = { path = "../rustyc_lexer" }
 rustyc_parser = { path = "../rustyc_parser" }
+rustyc_ty = { path = "../rustyc_ty" }
 thiserror = "1.0.56"
