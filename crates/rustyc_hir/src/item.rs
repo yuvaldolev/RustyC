@@ -11,4 +11,12 @@ impl Item {
     pub fn new(kind: ItemKind, span: Span) -> Self {
         Self { kind, span }
     }
+
+    pub fn get_kind(&self) -> &ItemKind {
+        &self.kind
+    }
+
+    pub fn get_span(&self) -> &Span {
+        &self.span
+    }
 }

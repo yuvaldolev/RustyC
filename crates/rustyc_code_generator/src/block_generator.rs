@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use rustyc_ast::Block;
+use rustyc_hir::Block;
 
 use crate::{
     label_allocator::LabelAllocator, statement_generator::StatementGenerator,

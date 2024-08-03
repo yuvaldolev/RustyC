@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use rustyc_ast::{FunctionItem, Item, ItemKind};
+use rustyc_hir::{FunctionItem, Item, ItemKind};
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, function_generator::FunctionGenerator,

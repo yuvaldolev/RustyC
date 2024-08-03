@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use rustyc_ast::{Block, Expression, Statement, StatementKind};
+use rustyc_hir::{Block, Expression, Statement, StatementKind};
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, block_generator::BlockGenerator,

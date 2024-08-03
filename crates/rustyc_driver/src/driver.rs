@@ -36,10 +36,10 @@ impl Driver {
         let ast = parser.parse()?;
 
         let ast_lowerer = AstLowerer::new(ast);
-        let _hir = ast_lowerer.lower();
+        let hir = ast_lowerer.lower();
 
-        // let code_generator = CodeGenerator::new(ast);
-        // code_generator.generate()?;
+        let code_generator = CodeGenerator::new(hir);
+        code_generator.generate()?;
 
         Ok(())
     }

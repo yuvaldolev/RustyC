@@ -13,4 +13,12 @@ impl Block {
     pub fn new(statements: Vec<Rc<Statement>>, span: Span) -> Self {
         Self { statements, span }
     }
+
+    pub fn get_statements(&self) -> &[Rc<Statement>] {
+        &self.statements
+    }
+
+    pub fn get_span(&self) -> &Span {
+        &self.span
+    }
 }

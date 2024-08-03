@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
-use rustyc_ast::{BinaryOperator, Expression, ExpressionKind, UnaryOperator};
 use rustyc_diagnostics::Diagnostic;
+use rustyc_hir::{BinaryOperator, Expression, ExpressionKind, UnaryOperator};
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, variable_properties::VariableProperties,

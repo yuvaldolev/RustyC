@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rustyc_ast = { path = "../rustyc_ast" }
 rustyc_diagnostics = { path = "../rustyc_diagnostics" }
+rustyc_hir = { path = "../rustyc_hir" }

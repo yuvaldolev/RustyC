@@ -183,8 +183,8 @@ dependencies = [
 name = "rustyc_code_generator"
 version = "0.1.0"
 dependencies = [
- "rustyc_ast",
  "rustyc_diagnostics",
+ "rustyc_hir",
 ]
 
 [[package]]

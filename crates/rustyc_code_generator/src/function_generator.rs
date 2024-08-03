@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use rustyc_ast::FunctionItem;
+use rustyc_hir::FunctionItem;
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, block_generator::BlockGenerator,
@@ -32,7 +32,7 @@ impl FunctionGenerator {
         self.generate_push_parameters_to_stack();
 
         let block_generator = BlockGenerator::new(
-            self.function.get_ast().get_body(),
+            self.function.get_item().get_body(),
             self.function.get_local_variables(),
             Rc::clone(&self.label_allocator),
         );
@@ -47,7 +47,7 @@ impl FunctionGenerator {
         // TODO: This logic is only relevant to macOS.
         // This would need to be abstracted somehow when adding support
         // for other platforms.
-        let function_name = format!("_{}", self.function.get_ast().get_name());
+        let function_name = format!("_{}", self.function.get_item().get_name());
         self.instruction_emitter.emit_global(&function_name);
         self.instruction_emitter.emit_label(&function_name);
 
@@ -61,7 +61,7 @@ impl FunctionGenerator {
     }
 
     fn generate_push_parameters_to_stack(&self) {
-        for (index, parameter) in self.function.get_ast().get_parameters().iter().enumerate() {
+        for (index, parameter) in self.function.get_item().get_parameters().iter().enumerate() {
             // TODO: Emit an error if the variable is not found, instead of panicking.
             self.instruction_emitter.emit_store_offset(
                 self.instruction_emitter
