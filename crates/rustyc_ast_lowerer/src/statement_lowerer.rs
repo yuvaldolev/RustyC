@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use rustyc_ty::TyContext;
 
@@ -6,11 +6,11 @@ use crate::{block_lowerer::BlockLowerer, expression_lowerer::ExpressionLowerer};
 
 pub struct StatementLowerer {
     statement: Rc<rustyc_ast::Statement>,
-    ty_context: Rc<TyContext>,
+    ty_context: Rc<RefCell<TyContext>>,
 }
 
 impl StatementLowerer {
-    pub fn new(statement: Rc<rustyc_ast::Statement>, ty_context: Rc<TyContext>) -> Self {
+    pub fn new(statement: Rc<rustyc_ast::Statement>, ty_context: Rc<RefCell<TyContext>>) -> Self {
         Self {
             statement,
             ty_context,

@@ -1,27 +1,42 @@
-use std::rc::Rc;
+use std::collections::HashMap;
 
-use crate::ty::Ty;
+use crate::{ty::Ty, TyId};
 
 // TODO: Instead of using reference counting, return a UID per type
 // and allow users to look it up in the `TyContext`, this would be way more efficient.
 
 pub struct TyContext {
-    int_type: Rc<Ty>,
+    types: HashMap<TyId, Ty>,
+    next_id: TyId,
 }
 
 impl TyContext {
     pub fn new() -> Self {
         Self {
-            int_type: Rc::new(Ty::Int),
+            types: HashMap::new(),
+            next_id: TyId::new(0),
         }
     }
 
-    pub fn get_int(&self) -> Rc<Ty> {
-        Rc::clone(&self.int_type)
+    pub fn get(&self, id: TyId) -> &Ty {
+        self.types.get(&id).unwrap()
     }
 
-    pub fn get_pointer(&self, base: Rc<Ty>) -> Rc<Ty> {
-        // TODO: Cache pointers with the same base type.
-        Rc::new(Ty::Pointer(base))
+    pub fn register(&mut self, ty: Ty) -> TyId {
+        if let Some((id, _)) = self.types.iter().find(|(_, v)| **v == ty) {
+            *id
+        } else {
+            let id = self.next_id();
+            self.types.insert(id, ty);
+
+            id
+        }
+    }
+
+    fn next_id(&mut self) -> TyId {
+        let id = self.next_id;
+        self.next_id = TyId::new(id.get() + 1);
+
+        id
     }
 }

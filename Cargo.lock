@@ -254,6 +254,14 @@ name = "rustyc_ty"
 version = "0.1.0"
 
 [[package]]
+name = "rustyc_type_checker"
+version = "0.1.0"
+dependencies = [
+ "rustyc_diagnostics",
+ "rustyc_hir",
+]
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

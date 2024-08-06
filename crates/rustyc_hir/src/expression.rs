@@ -1,18 +1,16 @@
-use std::rc::Rc;
-
 use rustyc_span::Span;
-use rustyc_ty::Ty;
+use rustyc_ty::TyId;
 
 use crate::ExpressionKind;
 
 pub struct Expression {
     kind: ExpressionKind,
-    ty: Rc<Ty>,
+    ty: TyId,
     span: Span,
 }
 
 impl Expression {
-    pub fn new(kind: ExpressionKind, ty: Rc<Ty>, span: Span) -> Self {
+    pub fn new(kind: ExpressionKind, ty: TyId, span: Span) -> Self {
         Self { kind, ty, span }
     }
 
@@ -20,8 +18,8 @@ impl Expression {
         &self.kind
     }
 
-    pub fn get_ty(&self) -> Rc<Ty> {
-        Rc::clone(&self.ty)
+    pub fn get_ty(&self) -> TyId {
+        self.ty
     }
 
     pub fn get_span(&self) -> &Span {

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use rustyc_ty::TyContext;
 
@@ -6,11 +6,11 @@ use crate::block_lowerer::BlockLowerer;
 
 pub struct FunctionLowerer {
     function: Rc<rustyc_ast::FunctionItem>,
-    ty_context: Rc<TyContext>,
+    ty_context: Rc<RefCell<TyContext>>,
 }
 
 impl FunctionLowerer {
-    pub fn new(function: Rc<rustyc_ast::FunctionItem>, ty_context: Rc<TyContext>) -> Self {
+    pub fn new(function: Rc<rustyc_ast::FunctionItem>, ty_context: Rc<RefCell<TyContext>>) -> Self {
         Self {
             function,
             ty_context,

@@ -7,14 +7,14 @@ use crate::{
 };
 
 pub struct CodeGenerator {
-    ast: Vec<Rc<Item>>,
+    hir: Vec<Rc<Item>>,
     instruction_emitter: Aarch64InstructionEmitter,
 }
 
 impl CodeGenerator {
-    pub fn new(ast: Vec<Rc<Item>>) -> Self {
+    pub fn new(hir: Vec<Rc<Item>>) -> Self {
         Self {
-            ast,
+            hir,
             instruction_emitter: Aarch64InstructionEmitter::new(),
         }
     }
@@ -22,7 +22,7 @@ impl CodeGenerator {
     pub fn generate(self) -> rustyc_diagnostics::Result<()> {
         self.instruction_emitter.emit_text_section_directive();
 
-        for item in self.ast.iter() {
+        for item in self.hir.iter() {
             let item_generator = ItemGenerator::new(Rc::clone(item));
             item_generator.generate()?;
         }

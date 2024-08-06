@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use rustyc_ty::TyContext;
 
@@ -6,11 +6,11 @@ use crate::item_lowerer::ItemLowerer;
 
 pub struct AstLowerer {
     ast: Vec<Rc<rustyc_ast::Item>>,
-    ty_context: Rc<TyContext>,
+    ty_context: Rc<RefCell<TyContext>>,
 }
 
 impl AstLowerer {
-    pub fn new(ast: Vec<Rc<rustyc_ast::Item>>, ty_context: Rc<TyContext>) -> Self {
+    pub fn new(ast: Vec<Rc<rustyc_ast::Item>>, ty_context: Rc<RefCell<TyContext>>) -> Self {
         Self { ast, ty_context }
     }
 

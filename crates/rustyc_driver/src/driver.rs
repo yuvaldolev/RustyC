@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use rustyc_ast_lowerer::AstLowerer;
 use rustyc_code_generator::CodeGenerator;
@@ -9,10 +9,12 @@ use rustyc_ty::TyContext;
 
 use crate::error;
 
+// TODO: Compiler crashes when runs follows: `cargo run -- "{ i = 55; }"`
+
 pub struct Driver {
     source: String,
     diagnostic_emitter: DiagnosticEmitter,
-    ty_context: Rc<TyContext>,
+    ty_context: Rc<RefCell<TyContext>>,
 }
 
 impl Driver {
@@ -22,7 +24,7 @@ impl Driver {
         Self {
             source,
             diagnostic_emitter,
-            ty_context: Rc::new(TyContext::new()),
+            ty_context: Rc::new(RefCell::new(TyContext::new())),
         }
     }
 
