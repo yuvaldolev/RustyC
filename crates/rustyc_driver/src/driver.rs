@@ -9,7 +9,8 @@ use rustyc_ty::TyContext;
 
 use crate::error;
 
-// TODO: Compiler crashes when runs follows: `cargo run -- "{ i = 55; }"`
+// TODO: Compiler panics when runs follows: `cargo run -- "{ i = 55; }"`
+// TODO: Compiler panics when runs follows: `cargo run -- "ain() { x=3; return *&x; } => 3"`
 
 pub struct Driver {
     source: String,

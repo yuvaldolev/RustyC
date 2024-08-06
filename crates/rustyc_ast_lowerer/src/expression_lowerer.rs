@@ -1,9 +1,10 @@
 use std::{cell::RefCell, rc::Rc};
 
-use rustyc_ty::{Ty, TyId};
+use rustyc_ty::{Ty, TyId, TyMatcher};
 
 pub struct ExpressionLowerer {
     expression: Rc<rustyc_ast::Expression>,
+    ty_matcher: TyMatcher,
     ty_context: Rc<RefCell<rustyc_ty::TyContext>>,
 }
 
@@ -14,6 +15,7 @@ impl ExpressionLowerer {
     ) -> Self {
         Self {
             expression,
+            ty_matcher: TyMatcher::new(Rc::clone(&ty_context)),
             ty_context,
         }
     }
@@ -121,10 +123,12 @@ impl ExpressionLowerer {
                 .borrow_mut()
                 .register(Ty::Pointer(hir_right.get_ty())),
             rustyc_ast::UnaryOperator::Dereference => {
+                let int_ty = self.ty_context.borrow_mut().register(Ty::Int);
+
                 if let Ty::Pointer(base) = self.ty_context.borrow().get(hir_right.get_ty()) {
                     *base
                 } else {
-                    self.ty_context.borrow_mut().register(Ty::Int)
+                    int_ty
                 }
             }
         };
@@ -171,18 +175,16 @@ impl ExpressionLowerer {
         left: Rc<rustyc_hir::Expression>,
         right: Rc<rustyc_hir::Expression>,
     ) -> (rustyc_hir::ExpressionKind, TyId) {
-        if let Ty::Pointer(_) = self.ty_context.borrow().get(left.get_ty()) {
-            if let Ty::Int = self.ty_context.borrow().get(right.get_ty()) {
-                return self.lower_pointer_number_arithmetic(
-                    left,
-                    right,
-                    rustyc_hir::BinaryOperator::Add,
-                );
-            }
+        if self.ty_matcher.is_pointer(left.get_ty()) && self.ty_matcher.is_int(right.get_ty()) {
+            return self.lower_pointer_number_arithmetic(
+                left,
+                right,
+                rustyc_hir::BinaryOperator::Add,
+            );
         }
 
-        if let Ty::Int = self.ty_context.borrow().get(left.get_ty()) {
-            if let Ty::Pointer(_) = self.ty_context.borrow().get(right.get_ty()) {
+        if self.ty_matcher.is_int(left.get_ty()) {
+            if self.ty_matcher.is_pointer(right.get_ty()) {
                 return self.lower_pointer_number_arithmetic(
                     right,
                     left,
@@ -204,20 +206,16 @@ impl ExpressionLowerer {
         left: Rc<rustyc_hir::Expression>,
         right: Rc<rustyc_hir::Expression>,
     ) -> (rustyc_hir::ExpressionKind, TyId) {
-        if let Ty::Pointer(_) = self.ty_context.borrow().get(left.get_ty()) {
-            if let Ty::Int = self.ty_context.borrow().get(right.get_ty()) {
-                return self.lower_pointer_number_arithmetic(
-                    left,
-                    right,
-                    rustyc_hir::BinaryOperator::Subtract,
-                );
-            }
+        if self.ty_matcher.is_pointer(left.get_ty()) && self.ty_matcher.is_int(right.get_ty()) {
+            return self.lower_pointer_number_arithmetic(
+                left,
+                right,
+                rustyc_hir::BinaryOperator::Subtract,
+            );
         }
 
-        if let Ty::Pointer(_) = self.ty_context.borrow().get(left.get_ty()) {
-            if let Ty::Pointer(_) = self.ty_context.borrow().get(right.get_ty()) {
-                return self.lower_pointer_pointer_subtract(left, right);
-            }
+        if self.ty_matcher.is_pointer(left.get_ty()) && self.ty_matcher.is_pointer(right.get_ty()) {
+            return self.lower_pointer_pointer_subtract(left, right);
         }
 
         let ty = left.get_ty();
@@ -266,6 +264,8 @@ impl ExpressionLowerer {
         left: Rc<rustyc_hir::Expression>,
         right: Rc<rustyc_hir::Expression>,
     ) -> (rustyc_hir::ExpressionKind, TyId) {
+        let int_ty = self.ty_context.borrow_mut().register(Ty::Int);
+
         (
             rustyc_hir::ExpressionKind::Binary(
                 rustyc_hir::BinaryOperator::Divide,
@@ -275,16 +275,16 @@ impl ExpressionLowerer {
                         left,
                         right,
                     ),
-                    self.ty_context.borrow_mut().register(Ty::Int),
+                    int_ty,
                     self.expression.get_span().clone(),
                 )),
                 Rc::new(rustyc_hir::Expression::new(
                     rustyc_hir::ExpressionKind::Number(8),
-                    self.ty_context.borrow_mut().register(Ty::Int),
+                    int_ty,
                     self.expression.get_span().clone(),
                 )),
             ),
-            self.ty_context.borrow_mut().register(Ty::Int),
+            int_ty,
         )
     }
 
