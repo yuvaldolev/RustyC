@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use rustyc_token::{TokenKind, TokenKindSet};
+use rustyc_token::{TokenCategory, TokenCategorySet, TokenKind};
 
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
@@ -10,11 +10,11 @@ pub enum Error {
     #[error("unknown token start")]
     UnknownTokenStart,
 
-    #[error("unexpected token '{0}', expected: '{1}'")]
-    UnexpectedTokenSingle(TokenKind, TokenKind),
+    #[error("unexpected token `{0}`, expected: {1}")]
+    UnexpectedTokenSingle(TokenKind, TokenCategory),
 
-    #[error("unexpected token '{0}', expected one of: {1}")]
-    UnexpectedTokenMultiple(TokenKind, TokenKindSet),
+    #[error("unexpected token `{0}`, expected one of: {1}")]
+    UnexpectedTokenMultiple(TokenKind, TokenCategorySet),
 
     #[error("expected an expression")]
     ExpressionExpected,

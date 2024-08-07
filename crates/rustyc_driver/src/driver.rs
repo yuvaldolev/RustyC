@@ -10,9 +10,6 @@ use rustyc_type_checker::TypeChecker;
 
 use crate::error;
 
-// TODO: Compiler panics when runs follows: `cargo run -- "{ i = 55; }"`
-// TODO: Compiler panics when runs follows: `cargo run -- "ain() { x=3; return *&x; } => 3"`
-
 pub struct Driver {
     source: String,
     diagnostic_emitter: DiagnosticEmitter,

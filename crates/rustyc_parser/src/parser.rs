@@ -6,7 +6,9 @@ use rustyc_ast::{
 };
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
-use rustyc_token::{BinaryOperatorToken, DelimiterToken, Keyword, Token, TokenKind, TokenKindSet};
+use rustyc_token::{
+    BinaryOperatorToken, DelimiterToken, Keyword, Token, TokenCategory, TokenCategorySet, TokenKind,
+};
 
 use crate::token_cursor::TokenCursor;
 
@@ -14,7 +16,7 @@ pub struct Parser {
     cursor: TokenCursor,
     token: Token,
     previous_token: Token,
-    expected_tokens: TokenKindSet,
+    expected_tokens: TokenCategorySet,
     local_variables: Vec<String>,
 }
 
@@ -24,7 +26,7 @@ impl Parser {
             cursor: TokenCursor::new(tokens),
             token: Token::new_eof(),
             previous_token: Token::new_eof(),
-            expected_tokens: TokenKindSet::new(),
+            expected_tokens: TokenCategorySet::new(),
             local_variables: Vec::new(),
         };
 
@@ -669,6 +671,8 @@ impl Parser {
     fn eat_identifier(&mut self) -> Option<String> {
         let kind = self.token.get_kind().clone();
 
+        self.expected_tokens.insert(TokenCategory::Identifier);
+
         if let TokenKind::Identifier(name) = kind {
             self.bump();
             Some(name)
@@ -740,7 +744,7 @@ impl Parser {
 
     fn check(&mut self, kind: TokenKind) -> bool {
         let result = (*self.token.get_kind()) == kind;
-        self.expected_tokens.insert(kind);
+        self.expected_tokens.insert(TokenCategory::Token(kind));
 
         result
     }

@@ -1,11 +1,11 @@
 use std::{collections::HashSet, fmt};
 
-use crate::TokenKind;
+use crate::TokenCategory;
 
 #[derive(Clone, Debug)]
-pub struct TokenKindSet(HashSet<TokenKind>);
+pub struct TokenCategorySet(HashSet<TokenCategory>);
 
-impl TokenKindSet {
+impl TokenCategorySet {
     pub fn new() -> Self {
         Self(HashSet::new())
     }
@@ -18,29 +18,29 @@ impl TokenKindSet {
         self.0.is_empty()
     }
 
-    pub fn insert(&mut self, token_kind: TokenKind) {
-        self.0.insert(token_kind);
+    pub fn insert(&mut self, token_category: TokenCategory) {
+        self.0.insert(token_category);
     }
 
     pub fn clear(&mut self) {
         self.0.clear();
     }
 
-    pub fn first(&self) -> &TokenKind {
+    pub fn first(&self) -> &TokenCategory {
         self.0.iter().next().unwrap()
     }
 }
 
-impl Default for TokenKindSet {
+impl Default for TokenCategorySet {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl fmt::Display for TokenKindSet {
+impl fmt::Display for TokenCategorySet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (index, token_kind) in self.0.iter().enumerate() {
-            write!(f, "'{token_kind}'")?;
+        for (index, token_category) in self.0.iter().enumerate() {
+            write!(f, "'{token_category}'")?;
 
             if (self.0.len() - 1) != index {
                 write!(f, ", ")?;
