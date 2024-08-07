@@ -749,10 +749,11 @@ impl Parser {
         result
     }
 
-    fn check_keyword(&self, keyword: Keyword) -> bool {
-        // TODO: Add a `TokenCategory` enum and save expected tokens as instances of
-        // this enum. Then add a the keyword to the expected tokens.
-        self.token.is_keyword(&keyword)
+    fn check_keyword(&mut self, keyword: Keyword) -> bool {
+        let result = self.token.is_keyword(&keyword);
+        self.expected_tokens.insert(TokenCategory::Keyword(keyword));
+
+        result
     }
 
     fn is_eof(&self) -> bool {

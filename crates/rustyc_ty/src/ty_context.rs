@@ -2,9 +2,6 @@ use std::collections::HashMap;
 
 use crate::{ty::Ty, TyId};
 
-// TODO: Instead of using reference counting, return a UID per type
-// and allow users to look it up in the `TyContext`, this would be way more efficient.
-
 pub struct TyContext {
     types: HashMap<TyId, Ty>,
     next_id: TyId,
