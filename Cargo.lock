@@ -207,6 +207,7 @@ dependencies = [
  "rustyc_lexer",
  "rustyc_parser",
  "rustyc_ty",
+ "rustyc_type_checker",
  "thiserror",
 ]
 
@@ -259,6 +260,7 @@ version = "0.1.0"
 dependencies = [
  "rustyc_diagnostics",
  "rustyc_hir",
+ "rustyc_ty",
 ]
 
 [[package]]

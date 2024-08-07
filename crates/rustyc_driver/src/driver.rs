@@ -6,6 +6,7 @@ use rustyc_diagnostics::DiagnosticEmitter;
 use rustyc_lexer::Lexer;
 use rustyc_parser::Parser;
 use rustyc_ty::TyContext;
+use rustyc_type_checker::TypeChecker;
 
 use crate::error;
 
@@ -45,6 +46,9 @@ impl Driver {
 
         let ast_lowerer = AstLowerer::new(ast, Rc::clone(&self.ty_context));
         let hir = ast_lowerer.lower();
+
+        let type_checker = TypeChecker::new(Rc::clone(&hir), Rc::clone(&self.ty_context));
+        type_checker.check()?;
 
         let code_generator = CodeGenerator::new(hir);
         code_generator.generate()?;

@@ -14,11 +14,13 @@ impl AstLowerer {
         Self { ast, ty_context }
     }
 
-    pub fn lower(self) -> Vec<Rc<rustyc_hir::Item>> {
-        self.ast
-            .iter()
-            .map(|item| self.lower_item(Rc::clone(item)))
-            .collect()
+    pub fn lower(self) -> Rc<Vec<Rc<rustyc_hir::Item>>> {
+        Rc::new(
+            self.ast
+                .iter()
+                .map(|item| self.lower_item(Rc::clone(item)))
+                .collect(),
+        )
     }
 
     fn lower_item(&self, item: Rc<rustyc_ast::Item>) -> Rc<rustyc_hir::Item> {

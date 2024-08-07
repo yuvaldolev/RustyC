@@ -7,12 +7,12 @@ use crate::{
 };
 
 pub struct CodeGenerator {
-    hir: Vec<Rc<Item>>,
+    hir: Rc<Vec<Rc<Item>>>,
     instruction_emitter: Aarch64InstructionEmitter,
 }
 
 impl CodeGenerator {
-    pub fn new(hir: Vec<Rc<Item>>) -> Self {
+    pub fn new(hir: Rc<Vec<Rc<Item>>>) -> Self {
         Self {
             hir,
             instruction_emitter: Aarch64InstructionEmitter::new(),
