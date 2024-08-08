@@ -128,7 +128,7 @@ impl ExpressionGenerator {
         name: &str,
         arguments: &[Rc<Expression>],
     ) -> rustyc_diagnostics::Result<()> {
-        for argument in arguments {
+        for argument in arguments.iter() {
             let argument_expression_generator =
                 Self::new(Rc::clone(argument), Rc::clone(&self.local_variables));
             argument_expression_generator.generate()?;

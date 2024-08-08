@@ -39,4 +39,7 @@ pub enum Error {
 
     #[error("not an lvalue")]
     NotAnLvalue,
+
+    #[error("invalid operands to binary expression")]
+    InvalidBinaryExpressionOperands,
 }

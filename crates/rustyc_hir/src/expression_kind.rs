@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::{BinaryOperator, Expression, UnaryOperator};
 
+#[derive(Debug)]
 pub enum ExpressionKind {
     Assignment(Rc<Expression>, Rc<Expression>),
     Binary(BinaryOperator, Rc<Expression>, Rc<Expression>),

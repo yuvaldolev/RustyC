@@ -3,6 +3,7 @@ use rustyc_ty::TyId;
 
 use crate::ExpressionKind;
 
+#[derive(Debug)]
 pub struct Expression {
     kind: ExpressionKind,
     ty: TyId,

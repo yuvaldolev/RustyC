@@ -62,15 +62,12 @@ impl StatementLowerer {
         ))
     }
 
-    pub fn lower_statement(
-        &self,
-        statement: Rc<rustyc_ast::Statement>,
-    ) -> Rc<rustyc_hir::Statement> {
+    fn lower_statement(&self, statement: Rc<rustyc_ast::Statement>) -> Rc<rustyc_hir::Statement> {
         let statement_lowerer = Self::new(statement, Rc::clone(&self.ty_context));
         statement_lowerer.lower()
     }
 
-    pub fn lower_expression(
+    fn lower_expression(
         &self,
         expression: Rc<rustyc_ast::Expression>,
     ) -> Rc<rustyc_hir::Expression> {
@@ -78,7 +75,7 @@ impl StatementLowerer {
         expression_lowerer.lower()
     }
 
-    pub fn lower_block(&self, block: Rc<rustyc_ast::Block>) -> Rc<rustyc_hir::Block> {
+    fn lower_block(&self, block: Rc<rustyc_ast::Block>) -> Rc<rustyc_hir::Block> {
         let block_lowerer = BlockLowerer::new(block, Rc::clone(&self.ty_context));
         block_lowerer.lower()
     }

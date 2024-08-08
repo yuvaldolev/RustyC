@@ -27,8 +27,8 @@ impl ItemGenerator {
         }
     }
 
-    fn generate_function(&self, item: Rc<FunctionItem>) -> rustyc_diagnostics::Result<()> {
-        let generator = FunctionGenerator::new(item);
+    fn generate_function(&self, function: Rc<FunctionItem>) -> rustyc_diagnostics::Result<()> {
+        let generator = FunctionGenerator::new(function);
         generator.generate()
     }
 }

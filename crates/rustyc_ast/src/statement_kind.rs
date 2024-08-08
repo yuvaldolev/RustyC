@@ -2,6 +2,9 @@ use std::rc::Rc;
 
 use crate::{Block, Expression, Statement};
 
+// TODO: Convert all statement kinds to dedicated structs (relevant for
+// expressions and as well, and for the HIR).
+
 #[derive(Clone)]
 pub enum StatementKind {
     Return(Rc<Expression>),

@@ -4,6 +4,7 @@ use rustyc_span::Span;
 
 use crate::Statement;
 
+#[derive(Debug)]
 pub struct Block {
     statements: Vec<Rc<Statement>>,
     span: Span,

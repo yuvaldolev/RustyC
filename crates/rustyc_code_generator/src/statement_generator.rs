@@ -60,15 +60,6 @@ impl StatementGenerator {
         }
     }
 
-    fn generate_compound(&self, block: Rc<Block>) -> rustyc_diagnostics::Result<()> {
-        let block_generator = BlockGenerator::new(
-            block,
-            Rc::clone(&self.local_variables),
-            Rc::clone(&self.label_allocator),
-        );
-        block_generator.generate()
-    }
-
     fn generate_return(&self, expression: Rc<Expression>) -> rustyc_diagnostics::Result<()> {
         self.generate_expression(expression)?;
         self.instruction_emitter.emit_branch(
@@ -160,6 +151,15 @@ impl StatementGenerator {
         self.instruction_emitter.emit_label(&end_label);
 
         Ok(())
+    }
+
+    fn generate_compound(&self, block: Rc<Block>) -> rustyc_diagnostics::Result<()> {
+        let block_generator = BlockGenerator::new(
+            block,
+            Rc::clone(&self.local_variables),
+            Rc::clone(&self.label_allocator),
+        );
+        block_generator.generate()
     }
 
     fn generate_expression(&self, expression: Rc<Expression>) -> rustyc_diagnostics::Result<()> {
