@@ -15,7 +15,7 @@ impl BlockLowerer {
     }
 
     pub fn lower(self) -> Rc<rustyc_hir::Block> {
-        let statements: Vec<Rc<rustyc_hir::Statement>> = self
+        let statements: Vec<Rc<rustyc_hir::statements::Statement>> = self
             .block
             .get_statements()
             .iter()
@@ -30,8 +30,8 @@ impl BlockLowerer {
 
     pub fn lower_statement(
         &self,
-        statement: Rc<rustyc_ast::Statement>,
-    ) -> Rc<rustyc_hir::Statement> {
+        statement: Rc<rustyc_ast::statements::Statement>,
+    ) -> Rc<rustyc_hir::statements::Statement> {
         let statement_lowerer = StatementLowerer::new(statement, Rc::clone(&self.ty_context));
         statement_lowerer.lower()
     }

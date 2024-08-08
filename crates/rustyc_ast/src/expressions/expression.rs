@@ -1,6 +1,6 @@
 use rustyc_span::Span;
 
-use crate::expression_kind::ExpressionKind;
+use super::ExpressionKind;
 
 #[derive(Clone, Debug)]
 pub struct Expression {

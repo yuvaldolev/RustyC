@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::function_item::FunctionItem;
+use super::FunctionItem;
 
 pub enum ItemKind {
     Function(Rc<FunctionItem>),

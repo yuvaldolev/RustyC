@@ -1,6 +1,6 @@
 use rustyc_span::Span;
 
-use crate::item_kind::ItemKind;
+use super::ItemKind;
 
 pub struct Item {
     kind: ItemKind,

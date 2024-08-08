@@ -1,8 +1,8 @@
 use rustyc_span::Span;
 
-use crate::StatementKind;
+use super::StatementKind;
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct Statement {
     kind: StatementKind,
     span: Span,

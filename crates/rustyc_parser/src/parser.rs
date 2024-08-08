@@ -1,8 +1,17 @@
 use std::{mem, rc::Rc};
 
 use rustyc_ast::{
-    BinaryOperator, Block, Expression, ExpressionKind, FunctionItem, Item, ItemKind, Statement,
-    StatementKind, UnaryOperator,
+    expressions::{
+        AssignmentExpression, BinaryExpression, BinaryOperator, Expression, ExpressionKind,
+        FunctionCallExpression, NumberExpression, UnaryExpression, UnaryOperator,
+        VariableExpression,
+    },
+    items::{FunctionItem, Item, ItemKind},
+    statements::{
+        CompoundStatement, ExpressionStatement, IfStatement, LoopStatement, ReturnStatement,
+        Statement, StatementKind,
+    },
+    Block,
 };
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
@@ -124,7 +133,7 @@ impl Parser {
         let expression = self.parse_expression()?;
         self.expect_semicolon()?;
 
-        Ok(StatementKind::Return(expression))
+        Ok(StatementKind::Return(ReturnStatement::new(expression)))
     }
 
     fn parse_if_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
@@ -142,11 +151,11 @@ impl Parser {
             None
         };
 
-        Ok(StatementKind::If(
+        Ok(StatementKind::If(IfStatement::new(
             condition_expression,
             then_statement,
             else_statement,
-        ))
+        )))
     }
 
     fn parse_for_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
@@ -178,12 +187,12 @@ impl Parser {
 
         let then_statement = self.parse_statement()?;
 
-        Ok(StatementKind::Loop(
+        Ok(StatementKind::Loop(LoopStatement::new(
             Some(initialization_statement),
             condition_expression,
             incrementation_expression,
             then_statement,
-        ))
+        )))
     }
 
     fn parse_while_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
@@ -195,33 +204,34 @@ impl Parser {
 
         let then_statement = self.parse_statement()?;
 
-        Ok(StatementKind::Loop(
+        Ok(StatementKind::Loop(LoopStatement::new(
             None,
             Some(condition_expression),
             None,
             then_statement,
-        ))
+        )))
     }
 
     fn parse_compound_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
         let block = self.parse_block()?;
-        Ok(StatementKind::Compound(block))
+        Ok(StatementKind::Compound(CompoundStatement::new(block)))
     }
 
     fn parse_expression_statement(&mut self) -> rustyc_diagnostics::Result<StatementKind> {
         let low = self.token.get_span().clone();
 
         if self.eat_semicolon() {
-            return Ok(StatementKind::Compound(Rc::new(Block::new(
-                Vec::new(),
-                self.compute_span(&low),
+            return Ok(StatementKind::Compound(CompoundStatement::new(Rc::new(
+                Block::new(Vec::new(), self.compute_span(&low)),
             ))));
         }
 
         let expression = self.parse_expression()?;
         self.expect_semicolon()?;
 
-        Ok(StatementKind::Expression(expression))
+        Ok(StatementKind::Expression(ExpressionStatement::new(
+            expression,
+        )))
     }
 
     fn parse_expression(&mut self) -> rustyc_diagnostics::Result<Rc<Expression>> {
@@ -375,18 +385,18 @@ impl Parser {
         }
 
         if self.eat_minus() {
-            let right = self.parse_unary()?;
-            return Ok(self.new_unary_expression(UnaryOperator::Negate, right, &low));
+            let operand = self.parse_unary()?;
+            return Ok(self.new_unary_expression(UnaryOperator::Negate, operand, &low));
         }
 
         if self.eat_and() {
-            let right = self.parse_unary()?;
-            return Ok(self.new_unary_expression(UnaryOperator::AddressOf, right, &low));
+            let operand = self.parse_unary()?;
+            return Ok(self.new_unary_expression(UnaryOperator::AddressOf, operand, &low));
         }
 
         if self.eat_star() {
-            let right = self.parse_unary()?;
-            return Ok(self.new_unary_expression(UnaryOperator::Dereference, right, &low));
+            let operand = self.parse_unary()?;
+            return Ok(self.new_unary_expression(UnaryOperator::Dereference, operand, &low));
         }
 
         self.parse_primary()
@@ -477,7 +487,10 @@ impl Parser {
         right: Rc<Expression>,
         low: &Span,
     ) -> Rc<Expression> {
-        self.new_expression(ExpressionKind::Assignment(left, right), low)
+        self.new_expression(
+            ExpressionKind::Assignment(AssignmentExpression::new(left, right)),
+            low,
+        )
     }
 
     fn new_binary_expression(
@@ -487,24 +500,30 @@ impl Parser {
         right: Rc<Expression>,
         low: &Span,
     ) -> Rc<Expression> {
-        self.new_expression(ExpressionKind::Binary(operator, left, right), low)
+        self.new_expression(
+            ExpressionKind::Binary(BinaryExpression::new(operator, left, right)),
+            low,
+        )
     }
 
     fn new_unary_expression(
         &self,
         operator: UnaryOperator,
-        right: Rc<Expression>,
+        operand: Rc<Expression>,
         low: &Span,
     ) -> Rc<Expression> {
-        self.new_expression(ExpressionKind::Unary(operator, right), low)
+        self.new_expression(
+            ExpressionKind::Unary(UnaryExpression::new(operator, operand)),
+            low,
+        )
     }
 
     fn new_variable_expression(&self, name: String, low: &Span) -> Rc<Expression> {
-        self.new_expression(ExpressionKind::Variable(name), low)
+        self.new_expression(ExpressionKind::Variable(VariableExpression::new(name)), low)
     }
 
     fn new_number_expression(&self, value: u64, low: &Span) -> Rc<Expression> {
-        self.new_expression(ExpressionKind::Number(value), low)
+        self.new_expression(ExpressionKind::Number(NumberExpression::new(value)), low)
     }
 
     fn new_function_call_expression(
@@ -513,7 +532,10 @@ impl Parser {
         arguments: Vec<Rc<Expression>>,
         low: &Span,
     ) -> Rc<Expression> {
-        self.new_expression(ExpressionKind::FunctionCall(name, arguments), low)
+        self.new_expression(
+            ExpressionKind::FunctionCall(FunctionCallExpression::new(name, arguments)),
+            low,
+        )
     }
 
     fn new_expression(&self, kind: ExpressionKind, low: &Span) -> Rc<Expression> {

@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use rustyc_span::Span;
 
-use crate::Statement;
+use crate::statements::Statement;
 
 #[derive(Debug)]
 pub struct Block {

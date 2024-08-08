@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::block::Block;
+use crate::Block;
 
 pub struct FunctionItem {
     name: String,

@@ -1,7 +1,7 @@
 use rustyc_span::Span;
 use rustyc_ty::TyId;
 
-use crate::ExpressionKind;
+use super::ExpressionKind;
 
 #[derive(Debug)]
 pub struct Expression {
