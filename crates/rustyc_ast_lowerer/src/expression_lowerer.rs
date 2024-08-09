@@ -3,14 +3,14 @@ use std::{cell::RefCell, rc::Rc};
 use rustyc_ty::{Ty, TyId, TyMatcher};
 
 pub struct ExpressionLowerer {
-    expression: Rc<rustyc_ast::Expression>,
+    expression: Rc<rustyc_ast::expressions::Expression>,
     ty_matcher: TyMatcher,
     ty_context: Rc<RefCell<rustyc_ty::TyContext>>,
 }
 
 impl ExpressionLowerer {
     pub fn new(
-        expression: Rc<rustyc_ast::Expression>,
+        expression: Rc<rustyc_ast::expressions::Expression>,
         ty_context: Rc<RefCell<rustyc_ty::TyContext>>,
     ) -> Self {
         Self {
@@ -20,112 +20,142 @@ impl ExpressionLowerer {
         }
     }
 
-    pub fn lower(self) -> Rc<rustyc_hir::Expression> {
+    pub fn lower(self) -> Rc<rustyc_hir::expressions::Expression> {
         let (hir_expression_kind, ty) = match self.expression.get_kind() {
-            rustyc_ast::ExpressionKind::Assignment(left, right) => {
-                self.lower_assignment(Rc::clone(left), Rc::clone(right))
+            rustyc_ast::expressions::ExpressionKind::Assignment(expression) => {
+                self.lower_assignment_expression(expression)
             }
-            rustyc_ast::ExpressionKind::Binary(operator, left, right) => {
-                self.lower_binary(operator, Rc::clone(left), Rc::clone(right))
+            rustyc_ast::expressions::ExpressionKind::Binary(expression) => {
+                self.lower_binary_expression(expression)
             }
-            rustyc_ast::ExpressionKind::Unary(operator, right) => {
-                self.lower_unary(operator, Rc::clone(right))
+            rustyc_ast::expressions::ExpressionKind::Unary(expression) => {
+                self.lower_unary_expression(expression)
             }
-            rustyc_ast::ExpressionKind::Variable(variable) => self.lower_variable(variable),
-            rustyc_ast::ExpressionKind::Number(number) => self.lower_number(*number),
-            rustyc_ast::ExpressionKind::FunctionCall(name, arguments) => {
-                self.lower_function_call(name, arguments)
+            rustyc_ast::expressions::ExpressionKind::Variable(expression) => {
+                self.lower_variable_expression(expression)
+            }
+            rustyc_ast::expressions::ExpressionKind::Number(expression) => {
+                self.lower_number_expression(expression)
+            }
+            rustyc_ast::expressions::ExpressionKind::FunctionCall(expression) => {
+                self.lower_function_call_expression(expression)
             }
         };
 
-        Rc::new(rustyc_hir::Expression::new(
+        Rc::new(rustyc_hir::expressions::Expression::new(
             hir_expression_kind,
             ty,
             self.expression.get_span().clone(),
         ))
     }
 
-    fn lower_binary_operator(operator: &rustyc_ast::BinaryOperator) -> rustyc_hir::BinaryOperator {
+    fn lower_binary_operator(
+        operator: &rustyc_ast::expressions::BinaryOperator,
+    ) -> rustyc_hir::expressions::BinaryOperator {
         match operator {
-            rustyc_ast::BinaryOperator::Equal => rustyc_hir::BinaryOperator::Equal,
-            rustyc_ast::BinaryOperator::NotEqual => rustyc_hir::BinaryOperator::NotEqual,
-            rustyc_ast::BinaryOperator::LessThan => rustyc_hir::BinaryOperator::LessThan,
-            rustyc_ast::BinaryOperator::LessThanOrEqual => {
-                rustyc_hir::BinaryOperator::LessThanOrEqual
+            rustyc_ast::expressions::BinaryOperator::Equal => {
+                rustyc_hir::expressions::BinaryOperator::Equal
             }
-            rustyc_ast::BinaryOperator::Add => rustyc_hir::BinaryOperator::Add,
-            rustyc_ast::BinaryOperator::Subtract => rustyc_hir::BinaryOperator::Subtract,
-            rustyc_ast::BinaryOperator::Multiply => rustyc_hir::BinaryOperator::Multiply,
-            rustyc_ast::BinaryOperator::Divide => rustyc_hir::BinaryOperator::Divide,
+            rustyc_ast::expressions::BinaryOperator::NotEqual => {
+                rustyc_hir::expressions::BinaryOperator::NotEqual
+            }
+            rustyc_ast::expressions::BinaryOperator::LessThan => {
+                rustyc_hir::expressions::BinaryOperator::LessThan
+            }
+            rustyc_ast::expressions::BinaryOperator::LessThanOrEqual => {
+                rustyc_hir::expressions::BinaryOperator::LessThanOrEqual
+            }
+            rustyc_ast::expressions::BinaryOperator::Add => {
+                rustyc_hir::expressions::BinaryOperator::Add
+            }
+            rustyc_ast::expressions::BinaryOperator::Subtract => {
+                rustyc_hir::expressions::BinaryOperator::Subtract
+            }
+            rustyc_ast::expressions::BinaryOperator::Multiply => {
+                rustyc_hir::expressions::BinaryOperator::Multiply
+            }
+            rustyc_ast::expressions::BinaryOperator::Divide => {
+                rustyc_hir::expressions::BinaryOperator::Divide
+            }
         }
     }
 
-    fn lower_unary_operator(operator: &rustyc_ast::UnaryOperator) -> rustyc_hir::UnaryOperator {
+    fn lower_unary_operator(
+        operator: &rustyc_ast::expressions::UnaryOperator,
+    ) -> rustyc_hir::expressions::UnaryOperator {
         match operator {
-            rustyc_ast::UnaryOperator::Negate => rustyc_hir::UnaryOperator::Negate,
-            rustyc_ast::UnaryOperator::AddressOf => rustyc_hir::UnaryOperator::AddressOf,
-            rustyc_ast::UnaryOperator::Dereference => rustyc_hir::UnaryOperator::Dereference,
+            rustyc_ast::expressions::UnaryOperator::Negate => {
+                rustyc_hir::expressions::UnaryOperator::Negate
+            }
+            rustyc_ast::expressions::UnaryOperator::AddressOf => {
+                rustyc_hir::expressions::UnaryOperator::AddressOf
+            }
+            rustyc_ast::expressions::UnaryOperator::Dereference => {
+                rustyc_hir::expressions::UnaryOperator::Dereference
+            }
         }
     }
 
-    fn lower_assignment(
+    fn lower_assignment_expression(
         &self,
-        left: Rc<rustyc_ast::Expression>,
-        right: Rc<rustyc_ast::Expression>,
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
-        let hir_left = self.lower_expression(left);
-        let hir_right = self.lower_expression(right);
+        expression: &rustyc_ast::expressions::AssignmentExpression,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
+        let hir_left = self.lower_expression(expression.get_left());
+        let hir_right = self.lower_expression(expression.get_right());
 
         let ty = hir_left.get_ty();
 
         (
-            rustyc_hir::ExpressionKind::Assignment(hir_left, hir_right),
+            rustyc_hir::expressions::ExpressionKind::Assignment(
+                rustyc_hir::expressions::AssignmentExpression::new(hir_left, hir_right),
+            ),
             ty,
         )
     }
 
-    fn lower_binary(
+    fn lower_binary_expression(
         &self,
-        operator: &rustyc_ast::BinaryOperator,
-        left: Rc<rustyc_ast::Expression>,
-        right: Rc<rustyc_ast::Expression>,
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
-        let hir_left = self.lower_expression(left);
-        let hir_right = self.lower_expression(right);
+        expression: &rustyc_ast::expressions::BinaryExpression,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
+        let hir_left = self.lower_expression(expression.get_left());
+        let hir_right = self.lower_expression(expression.get_right());
 
         let ty = hir_left.get_ty();
 
-        match operator {
-            rustyc_ast::BinaryOperator::Add => self.lower_add(hir_left, hir_right),
-            rustyc_ast::BinaryOperator::Subtract => self.lower_subtract(hir_left, hir_right),
+        match expression.get_operator() {
+            rustyc_ast::expressions::BinaryOperator::Add => self.lower_add(hir_left, hir_right),
+            rustyc_ast::expressions::BinaryOperator::Subtract => {
+                self.lower_subtract(hir_left, hir_right)
+            }
             _ => (
-                rustyc_hir::ExpressionKind::Binary(
-                    Self::lower_binary_operator(operator),
-                    hir_left,
-                    hir_right,
+                rustyc_hir::expressions::ExpressionKind::Binary(
+                    rustyc_hir::expressions::BinaryExpression::new(
+                        Self::lower_binary_operator(expression.get_operator()),
+                        hir_left,
+                        hir_right,
+                    ),
                 ),
                 ty,
             ),
         }
     }
 
-    fn lower_unary(
+    fn lower_unary_expression(
         &self,
-        operator: &rustyc_ast::UnaryOperator,
-        right: Rc<rustyc_ast::Expression>,
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
-        let hir_right = self.lower_expression(right);
+        expression: &rustyc_ast::expressions::UnaryExpression,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
+        let hir_operand = self.lower_expression(expression.get_operand());
 
-        let ty = match operator {
-            rustyc_ast::UnaryOperator::Negate => hir_right.get_ty(),
-            rustyc_ast::UnaryOperator::AddressOf => self
+        let ty = match expression.get_operator() {
+            rustyc_ast::expressions::UnaryOperator::Negate => hir_operand.get_ty(),
+            rustyc_ast::expressions::UnaryOperator::AddressOf => self
                 .ty_context
                 .borrow_mut()
-                .register(Ty::Pointer(hir_right.get_ty())),
-            rustyc_ast::UnaryOperator::Dereference => {
+                .register(Ty::Pointer(hir_operand.get_ty())),
+            rustyc_ast::expressions::UnaryOperator::Dereference => {
                 let int_ty = self.ty_context.borrow_mut().register(Ty::Int);
 
-                if let Ty::Pointer(base) = self.ty_context.borrow().get(hir_right.get_ty()) {
+                if let Ty::Pointer(base) = self.ty_context.borrow().get(hir_operand.get_ty()) {
                     *base
                 } else {
                     int_ty
@@ -134,37 +164,54 @@ impl ExpressionLowerer {
         };
 
         (
-            rustyc_hir::ExpressionKind::Unary(Self::lower_unary_operator(operator), hir_right),
+            rustyc_hir::expressions::ExpressionKind::Unary(
+                rustyc_hir::expressions::UnaryExpression::new(
+                    Self::lower_unary_operator(expression.get_operator()),
+                    hir_operand,
+                ),
+            ),
             ty,
         )
     }
 
-    fn lower_variable(&self, variable: &str) -> (rustyc_hir::ExpressionKind, TyId) {
-        (
-            rustyc_hir::ExpressionKind::Variable(variable.to_owned()),
-            self.ty_context.borrow_mut().register(Ty::Int),
-        )
-    }
-
-    fn lower_number(&self, number: u64) -> (rustyc_hir::ExpressionKind, TyId) {
-        (
-            rustyc_hir::ExpressionKind::Number(number),
-            self.ty_context.borrow_mut().register(Ty::Int),
-        )
-    }
-
-    fn lower_function_call(
+    fn lower_variable_expression(
         &self,
-        name: &str,
-        arguments: &[Rc<rustyc_ast::Expression>],
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
+        expression: &rustyc_ast::expressions::VariableExpression,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
         (
-            rustyc_hir::ExpressionKind::FunctionCall(
-                name.to_owned(),
-                arguments
-                    .iter()
-                    .map(|argument| self.lower_expression(Rc::clone(argument)))
-                    .collect(),
+            rustyc_hir::expressions::ExpressionKind::Variable(
+                rustyc_hir::expressions::VariableExpression::new(expression.get_name().to_owned()),
+            ),
+            self.ty_context.borrow_mut().register(Ty::Int),
+        )
+    }
+
+    fn lower_number_expression(
+        &self,
+        expression: &rustyc_ast::expressions::NumberExpression,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
+        (
+            rustyc_hir::expressions::ExpressionKind::Number(
+                rustyc_hir::expressions::NumberExpression::new(expression.get_value()),
+            ),
+            self.ty_context.borrow_mut().register(Ty::Int),
+        )
+    }
+
+    fn lower_function_call_expression(
+        &self,
+        expression: &rustyc_ast::expressions::FunctionCallExpression,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
+        (
+            rustyc_hir::expressions::ExpressionKind::FunctionCall(
+                rustyc_hir::expressions::FunctionCallExpression::new(
+                    expression.get_name().to_owned(),
+                    expression
+                        .get_arguments()
+                        .iter()
+                        .map(|argument| self.lower_expression(Rc::clone(argument)))
+                        .collect(),
+                ),
             ),
             self.ty_context.borrow_mut().register(Ty::Int),
         )
@@ -172,14 +219,14 @@ impl ExpressionLowerer {
 
     fn lower_add(
         &self,
-        left: Rc<rustyc_hir::Expression>,
-        right: Rc<rustyc_hir::Expression>,
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
+        left: Rc<rustyc_hir::expressions::Expression>,
+        right: Rc<rustyc_hir::expressions::Expression>,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
         if self.ty_matcher.is_pointer(left.get_ty()) && self.ty_matcher.is_int(right.get_ty()) {
             return self.lower_pointer_number_arithmetic(
                 left,
                 right,
-                rustyc_hir::BinaryOperator::Add,
+                rustyc_hir::expressions::BinaryOperator::Add,
             );
         }
 
@@ -188,7 +235,7 @@ impl ExpressionLowerer {
                 return self.lower_pointer_number_arithmetic(
                     right,
                     left,
-                    rustyc_hir::BinaryOperator::Add,
+                    rustyc_hir::expressions::BinaryOperator::Add,
                 );
             }
         }
@@ -196,21 +243,27 @@ impl ExpressionLowerer {
         let ty = left.get_ty();
 
         (
-            rustyc_hir::ExpressionKind::Binary(rustyc_hir::BinaryOperator::Add, left, right),
+            rustyc_hir::expressions::ExpressionKind::Binary(
+                rustyc_hir::expressions::BinaryExpression::new(
+                    rustyc_hir::expressions::BinaryOperator::Add,
+                    left,
+                    right,
+                ),
+            ),
             ty,
         )
     }
 
     fn lower_subtract(
         &self,
-        left: Rc<rustyc_hir::Expression>,
-        right: Rc<rustyc_hir::Expression>,
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
+        left: Rc<rustyc_hir::expressions::Expression>,
+        right: Rc<rustyc_hir::expressions::Expression>,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
         if self.ty_matcher.is_pointer(left.get_ty()) && self.ty_matcher.is_int(right.get_ty()) {
             return self.lower_pointer_number_arithmetic(
                 left,
                 right,
-                rustyc_hir::BinaryOperator::Subtract,
+                rustyc_hir::expressions::BinaryOperator::Subtract,
             );
         }
 
@@ -221,39 +274,51 @@ impl ExpressionLowerer {
         let ty = left.get_ty();
 
         (
-            rustyc_hir::ExpressionKind::Binary(rustyc_hir::BinaryOperator::Subtract, left, right),
+            rustyc_hir::expressions::ExpressionKind::Binary(
+                rustyc_hir::expressions::BinaryExpression::new(
+                    rustyc_hir::expressions::BinaryOperator::Subtract,
+                    left,
+                    right,
+                ),
+            ),
             ty,
         )
     }
 
     fn lower_pointer_number_arithmetic(
         &self,
-        pointer: Rc<rustyc_hir::Expression>,
-        number: Rc<rustyc_hir::Expression>,
-        operator: rustyc_hir::BinaryOperator,
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
+        pointer: Rc<rustyc_hir::expressions::Expression>,
+        number: Rc<rustyc_hir::expressions::Expression>,
+        operator: rustyc_hir::expressions::BinaryOperator,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
         let pointer_ty = pointer.get_ty();
         let number_ty = number.get_ty();
 
         let number_span = number.get_span().clone();
 
         (
-            rustyc_hir::ExpressionKind::Binary(
-                operator,
-                pointer,
-                Rc::new(rustyc_hir::Expression::new(
-                    rustyc_hir::ExpressionKind::Binary(
-                        rustyc_hir::BinaryOperator::Multiply,
-                        number,
-                        Rc::new(rustyc_hir::Expression::new(
-                            rustyc_hir::ExpressionKind::Number(8),
-                            self.ty_context.borrow_mut().register(Ty::Int),
-                            number_span.clone(),
-                        )),
-                    ),
-                    number_ty,
-                    number_span,
-                )),
+            rustyc_hir::expressions::ExpressionKind::Binary(
+                rustyc_hir::expressions::BinaryExpression::new(
+                    operator,
+                    pointer,
+                    Rc::new(rustyc_hir::expressions::Expression::new(
+                        rustyc_hir::expressions::ExpressionKind::Binary(
+                            rustyc_hir::expressions::BinaryExpression::new(
+                                rustyc_hir::expressions::BinaryOperator::Multiply,
+                                number,
+                                Rc::new(rustyc_hir::expressions::Expression::new(
+                                    rustyc_hir::expressions::ExpressionKind::Number(
+                                        rustyc_hir::expressions::NumberExpression::new(8),
+                                    ),
+                                    self.ty_context.borrow_mut().register(Ty::Int),
+                                    number_span.clone(),
+                                )),
+                            ),
+                        ),
+                        number_ty,
+                        number_span,
+                    )),
+                ),
             ),
             pointer_ty,
         )
@@ -261,28 +326,34 @@ impl ExpressionLowerer {
 
     fn lower_pointer_pointer_subtract(
         &self,
-        left: Rc<rustyc_hir::Expression>,
-        right: Rc<rustyc_hir::Expression>,
-    ) -> (rustyc_hir::ExpressionKind, TyId) {
+        left: Rc<rustyc_hir::expressions::Expression>,
+        right: Rc<rustyc_hir::expressions::Expression>,
+    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
         let int_ty = self.ty_context.borrow_mut().register(Ty::Int);
 
         (
-            rustyc_hir::ExpressionKind::Binary(
-                rustyc_hir::BinaryOperator::Divide,
-                Rc::new(rustyc_hir::Expression::new(
-                    rustyc_hir::ExpressionKind::Binary(
-                        rustyc_hir::BinaryOperator::Subtract,
-                        left,
-                        right,
-                    ),
-                    int_ty,
-                    self.expression.get_span().clone(),
-                )),
-                Rc::new(rustyc_hir::Expression::new(
-                    rustyc_hir::ExpressionKind::Number(8),
-                    int_ty,
-                    self.expression.get_span().clone(),
-                )),
+            rustyc_hir::expressions::ExpressionKind::Binary(
+                rustyc_hir::expressions::BinaryExpression::new(
+                    rustyc_hir::expressions::BinaryOperator::Divide,
+                    Rc::new(rustyc_hir::expressions::Expression::new(
+                        rustyc_hir::expressions::ExpressionKind::Binary(
+                            rustyc_hir::expressions::BinaryExpression::new(
+                                rustyc_hir::expressions::BinaryOperator::Subtract,
+                                left,
+                                right,
+                            ),
+                        ),
+                        int_ty,
+                        self.expression.get_span().clone(),
+                    )),
+                    Rc::new(rustyc_hir::expressions::Expression::new(
+                        rustyc_hir::expressions::ExpressionKind::Number(
+                            rustyc_hir::expressions::NumberExpression::new(8),
+                        ),
+                        int_ty,
+                        self.expression.get_span().clone(),
+                    )),
+                ),
             ),
             int_ty,
         )
@@ -290,8 +361,8 @@ impl ExpressionLowerer {
 
     fn lower_expression(
         &self,
-        expression: Rc<rustyc_ast::Expression>,
-    ) -> Rc<rustyc_hir::Expression> {
+        expression: Rc<rustyc_ast::expressions::Expression>,
+    ) -> Rc<rustyc_hir::expressions::Expression> {
         let expression_lowerer = Self::new(expression, Rc::clone(&self.ty_context));
         expression_lowerer.lower()
     }
