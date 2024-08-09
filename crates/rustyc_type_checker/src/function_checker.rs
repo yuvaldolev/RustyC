@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use rustyc_hir::FunctionItem;
+use rustyc_hir::items::FunctionItem;
 use rustyc_ty::TyContext;
 
 use crate::block_checker::BlockChecker;

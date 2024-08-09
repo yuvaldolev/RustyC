@@ -11,7 +11,7 @@ use rustyc_ast::{
         CompoundStatement, ExpressionStatement, IfStatement, LoopStatement, ReturnStatement,
         Statement, StatementKind,
     },
-    Block,
+    Ast, Block,
 };
 use rustyc_diagnostics::Diagnostic;
 use rustyc_span::Span;
@@ -44,14 +44,14 @@ impl Parser {
         parser
     }
 
-    pub fn parse(mut self) -> rustyc_diagnostics::Result<Vec<Rc<Item>>> {
-        let mut ast: Vec<Rc<Item>> = Vec::new();
+    pub fn parse(mut self) -> rustyc_diagnostics::Result<Ast> {
+        let mut items: Vec<Rc<Item>> = Vec::new();
 
         while !self.is_eof() {
-            ast.push(self.parse_item()?);
+            items.push(self.parse_item()?);
         }
 
-        Ok(ast)
+        Ok(Ast::new(items))
     }
 
     fn parse_item(&mut self) -> rustyc_diagnostics::Result<Rc<Item>> {

@@ -1,7 +1,10 @@
 use std::{cell::RefCell, rc::Rc};
 
 use rustyc_diagnostics::Diagnostic;
-use rustyc_hir::{BinaryOperator, Expression, ExpressionKind};
+use rustyc_hir::expressions::{
+    AssignmentExpression, BinaryExpression, BinaryOperator, Expression, ExpressionKind,
+    FunctionCallExpression, UnaryExpression,
+};
 use rustyc_ty::{TyContext, TyMatcher};
 
 pub struct ExpressionChecker {
@@ -21,54 +24,65 @@ impl ExpressionChecker {
 
     pub fn check(self) -> rustyc_diagnostics::Result<()> {
         match self.expression.get_kind() {
-            ExpressionKind::Assignment(left, right) => {
-                self.check_assignment(Rc::clone(left), Rc::clone(right))
+            ExpressionKind::Assignment(expression) => self.check_assignment_expression(expression),
+            ExpressionKind::Binary(expression) => self.check_binary_expression(expression),
+            ExpressionKind::Unary(expression) => self.check_unary_expression(expression),
+            ExpressionKind::FunctionCall(expression) => {
+                self.check_function_call_expression(expression)
             }
-            ExpressionKind::Binary(operator, left, right) => {
-                self.check_binary(operator, Rc::clone(left), Rc::clone(right))
-            }
-            ExpressionKind::Unary(_, right) => self.check_expression(Rc::clone(right)),
-            ExpressionKind::FunctionCall(_, arguments) => self.check_function_call(arguments),
             _ => Ok(()),
         }
     }
 
-    fn check_assignment(
+    fn check_assignment_expression(
         &self,
-        left: Rc<Expression>,
-        right: Rc<Expression>,
+        expression: &AssignmentExpression,
     ) -> rustyc_diagnostics::Result<()> {
-        self.check_expression(left)?;
-        self.check_expression(right)?;
+        self.check_expression(expression.get_left())?;
+        self.check_expression(expression.get_right())?;
 
         Ok(())
     }
 
-    fn check_binary(
+    fn check_binary_expression(
         &self,
-        operator: &BinaryOperator,
-        left: Rc<Expression>,
-        right: Rc<Expression>,
+        expression: &BinaryExpression,
     ) -> rustyc_diagnostics::Result<()> {
-        self.check_expression(Rc::clone(&left))?;
-        self.check_expression(Rc::clone(&right))?;
+        self.check_expression(expression.get_left())?;
+        self.check_expression(expression.get_right())?;
 
-        match operator {
-            BinaryOperator::Add => self.check_add(&left, &right),
-            BinaryOperator::Subtract => self.check_subtract(&left, &right),
+        match expression.get_operator() {
+            BinaryOperator::Add => self.check_add(expression.get_left(), expression.get_right()),
+            BinaryOperator::Subtract => {
+                self.check_subtract(expression.get_left(), expression.get_right())
+            }
             _ => Ok(()),
         }
     }
 
-    fn check_function_call(&self, arguments: &[Rc<Expression>]) -> rustyc_diagnostics::Result<()> {
-        for argument in arguments.iter() {
+    fn check_unary_expression(
+        &self,
+        expression: &UnaryExpression,
+    ) -> rustyc_diagnostics::Result<()> {
+        self.check_expression(expression.get_operand())
+    }
+
+    fn check_function_call_expression(
+        &self,
+        expression: &FunctionCallExpression,
+    ) -> rustyc_diagnostics::Result<()> {
+        for argument in expression.get_arguments().iter() {
             self.check_expression(Rc::clone(argument))?;
         }
 
         Ok(())
     }
 
-    fn check_add(&self, left: &Expression, right: &Expression) -> rustyc_diagnostics::Result<()> {
+    fn check_add(
+        &self,
+        left: Rc<Expression>,
+        right: Rc<Expression>,
+    ) -> rustyc_diagnostics::Result<()> {
         if self.ty_matcher.is_int(left.get_ty()) && self.ty_matcher.is_int(right.get_ty()) {
             return Ok(());
         }
@@ -85,8 +99,8 @@ impl ExpressionChecker {
 
     fn check_subtract(
         &self,
-        left: &Expression,
-        right: &Expression,
+        left: Rc<Expression>,
+        right: Rc<Expression>,
     ) -> rustyc_diagnostics::Result<()> {
         if self.ty_matcher.is_int(left.get_ty()) && self.ty_matcher.is_int(right.get_ty()) {
             return Ok(());

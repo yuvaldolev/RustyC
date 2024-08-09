@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use rustyc_hir::Item;
+use rustyc_hir::items::Item;
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, item_generator::ItemGenerator,
