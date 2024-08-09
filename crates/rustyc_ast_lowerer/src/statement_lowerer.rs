@@ -38,9 +38,9 @@ impl StatementLowerer {
                     self.lower_compound_statement(statement),
                 )
             }
-            rustyc_ast::statements::StatementKind::Expression(expression) => {
+            rustyc_ast::statements::StatementKind::Expression(statement) => {
                 rustyc_hir::statements::StatementKind::Expression(
-                    self.lower_expression_statement(expression),
+                    self.lower_expression_statement(statement),
                 )
             }
         };

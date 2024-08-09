@@ -20,6 +20,10 @@ impl Aarch64InstructionEmitter {
         Self::emit_instruction(format!("mov {destination}, #{source}").as_str());
     }
 
+    pub fn emit_move_unsigned_immediate_to_register(&self, source: u64, destination: &str) {
+        Self::emit_instruction(format!("mov {destination}, #{source}").as_str());
+    }
+
     pub fn emit_add_registers(&self, register_a: &str, register_b: &str, destination: &str) {
         Self::emit_instruction(format!("add {destination}, {register_a}, {register_b}").as_str());
     }

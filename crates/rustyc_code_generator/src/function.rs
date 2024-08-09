@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use rustyc_hir::FunctionItem;
+use rustyc_hir::items::FunctionItem;
 
 use crate::variable_properties::VariableProperties;
 

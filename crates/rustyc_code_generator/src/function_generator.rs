@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use rustyc_hir::FunctionItem;
+use rustyc_hir::items::FunctionItem;
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter, block_generator::BlockGenerator,
