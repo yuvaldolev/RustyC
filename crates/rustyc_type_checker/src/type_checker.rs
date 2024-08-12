@@ -16,6 +16,12 @@ impl TypeChecker {
     }
 
     pub fn check(self) -> rustyc_diagnostics::Result<()> {
+        let visitor = HirVisitor::default();
+        visitor.set_item_visitor(Box::new(ItemAnalyzer::new()));
+        visitor.visit(self.hir)?;
+
+        let hir_traverser = HirTraverser::new(Rc::clone(&self.hir));
+        hir_traverser.register_item_handler(ItemKind::Function, |item, function| Ok(()))?;
         for item in self.hir.get_items().iter() {
             let item_checker = ItemChecker::new(Rc::clone(item), Rc::clone(&self.ty_context));
             item_checker.check()?;

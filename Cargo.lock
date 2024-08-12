@@ -220,6 +220,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustyc_hir_walker"
+version = "0.1.0"
+dependencies = [
+ "rustyc_diagnostics",
+ "rustyc_hir",
+]
+
+[[package]]
 name = "rustyc_lexer"
 version = "0.1.0"
 dependencies = [

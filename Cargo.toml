@@ -16,6 +16,7 @@ members = [
   "crates/rustyc_diagnostics",
   "crates/rustyc_driver",
   "crates/rustyc_hir",
+  "crates/rustyc_hir_walker",
   "crates/rustyc_lexer",
   "crates/rustyc_parser",
   "crates/rustyc_span",

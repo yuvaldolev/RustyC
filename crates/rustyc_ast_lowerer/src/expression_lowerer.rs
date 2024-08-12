@@ -230,14 +230,12 @@ impl ExpressionLowerer {
             );
         }
 
-        if self.ty_matcher.is_int(left.get_ty()) {
-            if self.ty_matcher.is_pointer(right.get_ty()) {
-                return self.lower_pointer_number_arithmetic(
-                    right,
-                    left,
-                    rustyc_hir::expressions::BinaryOperator::Add,
-                );
-            }
+        if self.ty_matcher.is_int(left.get_ty()) && self.ty_matcher.is_pointer(right.get_ty()) {
+            return self.lower_pointer_number_arithmetic(
+                right,
+                left,
+                rustyc_hir::expressions::BinaryOperator::Add,
+            );
         }
 
         let ty = left.get_ty();
