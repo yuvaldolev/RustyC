@@ -1,5 +1,6 @@
 use rustyc_hir::{
     items::{FunctionItem, Item, ItemKind},
+    statements::{Statement, StatementKind},
     Block, Hir,
 };
 
@@ -54,5 +55,21 @@ impl HirWalker {
         }
 
         Ok(())
+    }
+
+    pub fn walk_statement(
+        &self,
+        statement: &Statement,
+        visitor: &mut impl HirVisitor,
+    ) -> rustyc_diagnostics::Result<()> {
+        match statement.get_kind() {
+            StatementKind::Return(statement) => visitor.visit_return_statement(statement, self),
+            StatementKind::If(statement) => visitor.visit_if_statement(statement, self),
+            StatementKind::Loop(statement) => visitor.visit_loop_statement(statement, self),
+            StatementKind::Compound(statement) => visitor.visit_compound_statement(statement, self),
+            StatementKind::Expression(statement) => {
+                visitor.visit_expression_statement(statement, self)
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@ impl AstLowerer {
     }
 
     pub fn lower(self) -> Rc<Hir> {
+        // TODO: Can we get rid of `Rc` using `into_iter` instead of `iter`?
         Rc::new(Hir::new(
             self.ast
                 .get_items()
