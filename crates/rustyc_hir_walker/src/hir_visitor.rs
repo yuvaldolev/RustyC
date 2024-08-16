@@ -1,6 +1,12 @@
 use rustyc_hir::{
+    expressions::{
+        AssignmentExpression, BinaryExpression, Expression, FunctionCallExpression, UnaryExpression,
+    },
     items::{FunctionItem, Item},
-    statements::{ExpressionStatement, IfStatement, LoopStatement, ReturnStatement, Statement},
+    statements::{
+        CompoundStatement, ExpressionStatement, IfStatement, LoopStatement, ReturnStatement,
+        Statement,
+    },
     Block,
 };
 
@@ -69,5 +75,45 @@ pub trait HirVisitor: Sized {
         walker: &HirWalker,
     ) -> rustyc_diagnostics::Result<()> {
         walker.walk_expression_statement(statement, self)
+    }
+
+    fn visit_expression(
+        &mut self,
+        expression: &Expression,
+        walker: &HirWalker,
+    ) -> rustyc_diagnostics::Result<()> {
+        walker.walk_expression(expression, self)
+    }
+
+    fn visit_assignment_expression(
+        &mut self,
+        expression: &AssignmentExpression,
+        walker: &HirWalker,
+    ) -> rustyc_diagnostics::Result<()> {
+        walker.walk_assignment_expression(expression, self)
+    }
+
+    fn visit_binary_expression(
+        &mut self,
+        expression: &BinaryExpression,
+        walker: &HirWalker,
+    ) -> rustyc_diagnostics::Result<()> {
+        walker.walk_binary_expression(expression, self)
+    }
+
+    fn visit_unary_expression(
+        &mut self,
+        expression: &UnaryExpression,
+        walker: &HirWalker,
+    ) -> rustyc_diagnostics::Result<()> {
+        walker.walk_unary_expression(expression, self)
+    }
+
+    fn visit_function_call_expression(
+        &mut self,
+        expression: &FunctionCallExpression,
+        walker: &HirWalker,
+    ) -> rustyc_diagnostics::Result<()> {
+        walker.walk_function_call_expression(expression, self)
     }
 }
