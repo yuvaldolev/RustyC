@@ -1,9 +1,10 @@
 use std::{cell::RefCell, rc::Rc};
 
 use rustyc_hir::Hir;
+use rustyc_hir_walker::HirWalker;
 use rustyc_ty::TyContext;
 
-use crate::item_checker::ItemChecker;
+use crate::type_check_visitor::TypeCheckVisitor;
 
 pub struct TypeChecker {
     hir: Rc<Hir>,
@@ -16,16 +17,9 @@ impl TypeChecker {
     }
 
     pub fn check(self) -> rustyc_diagnostics::Result<()> {
-        let visitor = HirVisitor::default();
-        visitor.set_item_visitor(Box::new(ItemAnalyzer::new()));
-        visitor.visit(self.hir)?;
-
-        let hir_traverser = HirTraverser::new(Rc::clone(&self.hir));
-        hir_traverser.register_item_handler(ItemKind::Function, |item, function| Ok(()))?;
-        for item in self.hir.get_items().iter() {
-            let item_checker = ItemChecker::new(Rc::clone(item), Rc::clone(&self.ty_context));
-            item_checker.check()?;
-        }
+        let walker = HirWalker::new();
+        let mut type_check_visitor = TypeCheckVisitor::new(Rc::clone(&self.ty_context));
+        walker.walk(&self.hir, &mut type_check_visitor)?;
 
         Ok(())
     }

@@ -6,4 +6,6 @@ edition = "2021"
 [dependencies]
 rustyc_diagnostics = { path = "../rustyc_diagnostics" }
 rustyc_hir = { path = "../rustyc_hir" }
+rustyc_hir_walker = { path = "../rustyc_hir_walker" }
+rustyc_span = { path = "../rustyc_span" }
 rustyc_ty = { path = "../rustyc_ty" }

@@ -13,17 +13,15 @@ use rustyc_hir::{
 
 use crate::HirVisitor;
 
-pub struct HirWalker {
-    hir: Hir,
-}
+pub struct HirWalker;
 
 impl HirWalker {
-    pub fn new(hir: Hir) -> Self {
-        Self { hir }
+    pub fn new() -> Self {
+        Self
     }
 
-    pub fn walk(self, visitor: &mut impl HirVisitor) -> rustyc_diagnostics::Result<()> {
-        for item in self.hir.get_items().iter() {
+    pub fn walk(&self, hir: &Hir, visitor: &mut impl HirVisitor) -> rustyc_diagnostics::Result<()> {
+        for item in hir.get_items().iter() {
             visitor.visit_item(item, &self)?;
         }
 
