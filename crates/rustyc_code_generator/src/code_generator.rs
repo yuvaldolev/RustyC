@@ -1,9 +1,11 @@
 use std::rc::Rc;
 
 use rustyc_hir::Hir;
+use rustyc_hir_walker::HirWalker;
 
 use crate::{
-    aarch64_instruction_emitter::Aarch64InstructionEmitter, item_generator::ItemGenerator,
+    aarch64_instruction_emitter::Aarch64InstructionEmitter,
+    code_generation_visitor::CodeGenerationVisitor,
 };
 
 pub struct CodeGenerator {
@@ -22,10 +24,9 @@ impl CodeGenerator {
     pub fn generate(self) -> rustyc_diagnostics::Result<()> {
         self.instruction_emitter.emit_text_section_directive();
 
-        for item in self.hir.get_items().iter() {
-            let item_generator = ItemGenerator::new(Rc::clone(item));
-            item_generator.generate()?;
-        }
+        let walker = HirWalker::new();
+        let mut code_generation_visitor = CodeGenerationVisitor::new();
+        walker.walk(&self.hir, &mut code_generation_visitor)?;
 
         Ok(())
     }

@@ -1,73 +1,51 @@
-use std::{cell::RefCell, rc::Rc};
-
 use rustyc_hir::items::FunctionItem;
 
 use crate::{
-    aarch64_instruction_emitter::Aarch64InstructionEmitter, block_generator::BlockGenerator,
-    function::Function, label_allocator::LabelAllocator,
+    aarch64_instruction_emitter::Aarch64InstructionEmitter,
+    code_generation_context::CodeGenerationContext,
 };
 
 pub struct FunctionGenerator {
-    function: Function,
-    label_allocator: Rc<RefCell<LabelAllocator>>,
     instruction_emitter: Aarch64InstructionEmitter,
 }
 
 impl FunctionGenerator {
-    pub fn new(function: Rc<FunctionItem>) -> Self {
-        let label_allocator = Rc::new(RefCell::new(LabelAllocator::new(
-            function.get_name().to_owned(),
-        )));
-
+    pub fn new() -> Self {
         Self {
-            function: Function::new(function),
-            label_allocator,
             instruction_emitter: Aarch64InstructionEmitter::new(),
         }
     }
 
-    pub fn generate(self) -> rustyc_diagnostics::Result<()> {
-        self.generate_prologue();
-
-        self.generate_push_parameters_to_stack();
-
-        let block_generator = BlockGenerator::new(
-            self.function.get_item().get_body(),
-            self.function.get_local_variables(),
-            Rc::clone(&self.label_allocator),
-        );
-        block_generator.generate()?;
-
-        self.generate_epilogue();
-
-        Ok(())
-    }
-
-    fn generate_prologue(&self) {
+    pub fn generate_prologue(&self, function: &FunctionItem, context: &CodeGenerationContext) {
         // TODO: This logic is only relevant to macOS.
         // This would need to be abstracted somehow when adding support
         // for other platforms.
-        let function_name = format!("_{}", self.function.get_item().get_name());
+        let function_name = format!("_{}", function.get_name());
         self.instruction_emitter.emit_global(&function_name);
         self.instruction_emitter.emit_label(&function_name);
 
         self.instruction_emitter.emit_push_pair("fp", "lr");
         self.instruction_emitter.emit_move_registers("sp", "fp");
+        // TODO: Does this really work (immediate stack size is missing a hashtag)?
         self.instruction_emitter.emit_subtract(
             "sp",
-            self.function.get_stack_size().to_string().as_str(),
+            context.get_stack_size().to_string().as_str(),
             "sp",
         );
     }
 
-    fn generate_push_parameters_to_stack(&self) {
-        for (index, parameter) in self.function.get_item().get_parameters().iter().enumerate() {
+    pub fn generate_push_parameters_to_stack(
+        &self,
+        function: &FunctionItem,
+        context: &CodeGenerationContext,
+    ) {
+        for (index, parameter) in function.get_parameters().iter().enumerate() {
             // TODO: Emit an error if the variable is not found, instead of panicking.
             self.instruction_emitter.emit_store_offset(
                 self.instruction_emitter
                     .get_function_parameter_register(index),
                 "fp",
-                self.function
+                context
                     .get_local_variables()
                     .get(parameter)
                     .unwrap()
@@ -76,10 +54,10 @@ impl FunctionGenerator {
         }
     }
 
-    fn generate_epilogue(&self) {
+    pub fn generate_epilogue(&self, context: &mut CodeGenerationContext) {
         self.instruction_emitter.emit_label(
-            self.label_allocator
-                .borrow()
+            context
+                .get_label_allocator()
                 .allocate_global("return")
                 .as_str(),
         );

@@ -4,8 +4,15 @@ pub struct LabelAllocator {
 }
 
 impl LabelAllocator {
-    pub fn new(prefix: String) -> Self {
-        Self { prefix, next: 0 }
+    pub fn new() -> Self {
+        Self {
+            prefix: String::new(),
+            next: 0,
+        }
+    }
+
+    pub fn set_prefix(&mut self, prefix: &str) {
+        self.prefix.replace_range(.., prefix);
     }
 
     pub fn allocate_unique(&mut self, name: &str) -> String {
