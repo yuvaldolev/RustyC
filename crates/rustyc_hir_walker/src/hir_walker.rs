@@ -1,7 +1,7 @@
 use rustyc_hir::{
     expressions::{
         AssignmentExpression, BinaryExpression, Expression, ExpressionKind, FunctionCallExpression,
-        UnaryExpression,
+        NumberExpression, UnaryExpression, VariableExpression,
     },
     items::{FunctionItem, Item, ItemKind},
     statements::{
@@ -115,11 +115,11 @@ impl HirWalker {
             visitor.visit_expression(&condition_expression, self)?;
         }
 
+        visitor.visit_statement(&statement.get_then_statement(), self)?;
+
         if let Some(incrementation_expression) = statement.get_incrementation_expression() {
             visitor.visit_expression(&incrementation_expression, self)?;
         }
-
-        visitor.visit_statement(&statement.get_then_statement(), self)?;
 
         Ok(())
     }
@@ -151,10 +151,13 @@ impl HirWalker {
             }
             ExpressionKind::Binary(expression) => visitor.visit_binary_expression(expression, self),
             ExpressionKind::Unary(expression) => visitor.visit_unary_expression(expression, self),
+            ExpressionKind::Variable(expression) => {
+                visitor.visit_variable_expression(expression, self)
+            }
+            ExpressionKind::Number(expression) => visitor.visit_number_expression(expression, self),
             ExpressionKind::FunctionCall(expression) => {
                 visitor.visit_function_call_expression(expression, self)
             }
-            _ => Ok(()),
         }
     }
 
@@ -186,6 +189,22 @@ impl HirWalker {
         visitor: &mut impl HirVisitor,
     ) -> rustyc_diagnostics::Result<()> {
         visitor.visit_expression(&expression.get_operand(), self)
+    }
+
+    pub fn walk_variable_expression(
+        &self,
+        _expression: &VariableExpression,
+        _visitor: &mut impl HirVisitor,
+    ) -> rustyc_diagnostics::Result<()> {
+        Ok(())
+    }
+
+    pub fn walk_number_expression(
+        &self,
+        _expression: &NumberExpression,
+        _visitor: &mut impl HirVisitor,
+    ) -> rustyc_diagnostics::Result<()> {
+        Ok(())
     }
 
     pub fn walk_function_call_expression(

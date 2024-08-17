@@ -1,6 +1,7 @@
 use rustyc_hir::{
     expressions::{
-        AssignmentExpression, BinaryExpression, Expression, FunctionCallExpression, UnaryExpression,
+        AssignmentExpression, BinaryExpression, Expression, FunctionCallExpression,
+        NumberExpression, UnaryExpression, VariableExpression,
     },
     items::{FunctionItem, Item},
     statements::{
@@ -107,6 +108,22 @@ pub trait HirVisitor: Sized {
         walker: &HirWalker,
     ) -> rustyc_diagnostics::Result<()> {
         walker.walk_unary_expression(expression, self)
+    }
+
+    fn visit_variable_expression(
+        &mut self,
+        expression: &VariableExpression,
+        walker: &HirWalker,
+    ) -> rustyc_diagnostics::Result<()> {
+        walker.walk_variable_expression(expression, self)
+    }
+
+    fn visit_number_expression(
+        &mut self,
+        expression: &NumberExpression,
+        walker: &HirWalker,
+    ) -> rustyc_diagnostics::Result<()> {
+        walker.walk_number_expression(expression, self)
     }
 
     fn visit_function_call_expression(
