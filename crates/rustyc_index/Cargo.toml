@@ -1,0 +1,7 @@
+[package]
+name = "rustyc_index"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rustyc_index_macros = { path = "../rustyc_index_macros" }

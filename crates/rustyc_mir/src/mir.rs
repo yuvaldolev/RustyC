@@ -1,11 +1,15 @@
-use crate::body::Body;
+use rustyc_index::IndexVec;
+
+use crate::body::{Body, BodyId};
 
 pub struct Mir {
-    bodies: Vec<Body>,
+    bodies: IndexVec<BodyId, Body>,
 }
 
 impl Mir {
     pub fn new() -> Self {
-        Self
+        Self {
+            bodies: IndexVec::new(),
+        }
     }
 }
