@@ -8,6 +8,7 @@ rustyc_ast_lowerer = { path = "../rustyc_ast_lowerer" }
 rustyc_code_generator = { path = "../rustyc_code_generator" }
 rustyc_diagnostics = { path = "../rustyc_diagnostics" }
 rustyc_lexer = { path = "../rustyc_lexer" }
+rustyc_mir_builder = { path = "../rustyc_mir_builder" }
 rustyc_parser = { path = "../rustyc_parser" }
 rustyc_ty = { path = "../rustyc_ty" }
 rustyc_type_checker = { path = "../rustyc_type_checker" }

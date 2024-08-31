@@ -4,6 +4,7 @@ use rustyc_ast_lowerer::AstLowerer;
 use rustyc_code_generator::CodeGenerator;
 use rustyc_diagnostics::DiagnosticEmitter;
 use rustyc_lexer::Lexer;
+use rustyc_mir_builder::MirBuilder;
 use rustyc_parser::Parser;
 use rustyc_ty::TyContext;
 use rustyc_type_checker::TypeChecker;
@@ -46,6 +47,9 @@ impl Driver {
 
         let type_checker = TypeChecker::new(Rc::clone(&hir), Rc::clone(&self.ty_context));
         type_checker.check()?;
+
+        let mir_builder = MirBuilder::new(Rc::clone(&self.ty_context));
+        mir_builder.build(&hir);
 
         let code_generator = CodeGenerator::new(hir);
         code_generator.generate()?;

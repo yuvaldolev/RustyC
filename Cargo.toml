@@ -18,6 +18,8 @@ members = [
   "crates/rustyc_hir",
   "crates/rustyc_hir_walker",
   "crates/rustyc_lexer",
+  "crates/rustyc_mir",
+  "crates/rustyc_mir_builder",
   "crates/rustyc_parser",
   "crates/rustyc_span",
   "crates/rustyc_token",

@@ -206,6 +206,7 @@ dependencies = [
  "rustyc_code_generator",
  "rustyc_diagnostics",
  "rustyc_lexer",
+ "rustyc_mir_builder",
  "rustyc_parser",
  "rustyc_ty",
  "rustyc_type_checker",
@@ -235,6 +236,21 @@ dependencies = [
  "rustyc_diagnostics",
  "rustyc_span",
  "rustyc_token",
+]
+
+[[package]]
+name = "rustyc_mir"
+version = "0.1.0"
+
+[[package]]
+name = "rustyc_mir_builder"
+version = "0.1.0"
+dependencies = [
+ "rustyc_diagnostics",
+ "rustyc_hir",
+ "rustyc_hir_walker",
+ "rustyc_mir",
+ "rustyc_ty",
 ]
 
 [[package]]
