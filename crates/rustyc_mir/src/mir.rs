@@ -7,9 +7,7 @@ pub struct Mir {
 }
 
 impl Mir {
-    pub fn new() -> Self {
-        Self {
-            bodies: IndexVec::new(),
-        }
+    pub fn new(bodies: IndexVec<BodyId, Body>) -> Self {
+        Self { bodies }
     }
 }

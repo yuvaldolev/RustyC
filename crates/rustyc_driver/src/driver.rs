@@ -49,7 +49,7 @@ impl Driver {
         type_checker.check()?;
 
         let mir_builder = MirBuilder::new(Rc::clone(&self.ty_context));
-        mir_builder.build(&hir);
+        mir_builder.build(&hir)?;
 
         let code_generator = CodeGenerator::new(hir);
         code_generator.generate()?;
