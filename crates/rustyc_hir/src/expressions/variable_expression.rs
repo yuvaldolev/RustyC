@@ -1,14 +1,16 @@
+use crate::LocalId;
+
 #[derive(Clone, Debug)]
 pub struct VariableExpression {
-    name: String,
+    id: LocalId,
 }
 
 impl VariableExpression {
-    pub fn new(name: String) -> Self {
-        Self { name }
+    pub fn new(id: LocalId) -> Self {
+        Self { id }
     }
 
-    pub fn get_name(&self) -> &str {
-        &self.name
+    pub fn get_id(&self) -> LocalId {
+        self.id
     }
 }

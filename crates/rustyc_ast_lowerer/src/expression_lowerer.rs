@@ -1,8 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
+use rustyc_diagnostics::Diagnostic;
 use rustyc_ty::{Ty, TyId, TyMatcher};
 
+use crate::function_lowering_context::FunctionLoweringContext;
+
 pub struct ExpressionLowerer {
+    context: Rc<FunctionLoweringContext>,
     expression: Rc<rustyc_ast::expressions::Expression>,
     ty_matcher: TyMatcher,
     ty_context: Rc<RefCell<rustyc_ty::TyContext>>,
@@ -10,43 +14,45 @@ pub struct ExpressionLowerer {
 
 impl ExpressionLowerer {
     pub fn new(
+        context: Rc<FunctionLoweringContext>,
         expression: Rc<rustyc_ast::expressions::Expression>,
         ty_context: Rc<RefCell<rustyc_ty::TyContext>>,
     ) -> Self {
         Self {
+            context,
             expression,
             ty_matcher: TyMatcher::new(Rc::clone(&ty_context)),
             ty_context,
         }
     }
 
-    pub fn lower(self) -> Rc<rustyc_hir::expressions::Expression> {
+    pub fn lower(self) -> rustyc_diagnostics::Result<Rc<rustyc_hir::expressions::Expression>> {
         let (hir_expression_kind, ty) = match self.expression.get_kind() {
             rustyc_ast::expressions::ExpressionKind::Assignment(expression) => {
-                self.lower_assignment_expression(expression)
+                self.lower_assignment_expression(expression)?
             }
             rustyc_ast::expressions::ExpressionKind::Binary(expression) => {
-                self.lower_binary_expression(expression)
+                self.lower_binary_expression(expression)?
             }
             rustyc_ast::expressions::ExpressionKind::Unary(expression) => {
-                self.lower_unary_expression(expression)
+                self.lower_unary_expression(expression)?
             }
             rustyc_ast::expressions::ExpressionKind::Variable(expression) => {
-                self.lower_variable_expression(expression)
+                self.lower_variable_expression(expression)?
             }
             rustyc_ast::expressions::ExpressionKind::Number(expression) => {
                 self.lower_number_expression(expression)
             }
             rustyc_ast::expressions::ExpressionKind::FunctionCall(expression) => {
-                self.lower_function_call_expression(expression)
+                self.lower_function_call_expression(expression)?
             }
         };
 
-        Rc::new(rustyc_hir::expressions::Expression::new(
+        Ok(Rc::new(rustyc_hir::expressions::Expression::new(
             hir_expression_kind,
             ty,
             self.expression.get_span().clone(),
-        ))
+        )))
     }
 
     fn lower_binary_operator(
@@ -99,30 +105,30 @@ impl ExpressionLowerer {
     fn lower_assignment_expression(
         &self,
         expression: &rustyc_ast::expressions::AssignmentExpression,
-    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
-        let hir_left = self.lower_expression(expression.get_left());
-        let hir_right = self.lower_expression(expression.get_right());
+    ) -> rustyc_diagnostics::Result<(rustyc_hir::expressions::ExpressionKind, TyId)> {
+        let hir_left = self.lower_expression(expression.get_left())?;
+        let hir_right = self.lower_expression(expression.get_right())?;
 
         let ty = hir_left.get_ty();
 
-        (
+        Ok((
             rustyc_hir::expressions::ExpressionKind::Assignment(
                 rustyc_hir::expressions::AssignmentExpression::new(hir_left, hir_right),
             ),
             ty,
-        )
+        ))
     }
 
     fn lower_binary_expression(
         &self,
         expression: &rustyc_ast::expressions::BinaryExpression,
-    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
-        let hir_left = self.lower_expression(expression.get_left());
-        let hir_right = self.lower_expression(expression.get_right());
+    ) -> rustyc_diagnostics::Result<(rustyc_hir::expressions::ExpressionKind, TyId)> {
+        let hir_left = self.lower_expression(expression.get_left())?;
+        let hir_right = self.lower_expression(expression.get_right())?;
 
         let ty = hir_left.get_ty();
 
-        match expression.get_operator() {
+        let hir_expression = match expression.get_operator() {
             rustyc_ast::expressions::BinaryOperator::Add => self.lower_add(hir_left, hir_right),
             rustyc_ast::expressions::BinaryOperator::Subtract => {
                 self.lower_subtract(hir_left, hir_right)
@@ -137,14 +143,16 @@ impl ExpressionLowerer {
                 ),
                 ty,
             ),
-        }
+        };
+
+        Ok(hir_expression)
     }
 
     fn lower_unary_expression(
         &self,
         expression: &rustyc_ast::expressions::UnaryExpression,
-    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
-        let hir_operand = self.lower_expression(expression.get_operand());
+    ) -> rustyc_diagnostics::Result<(rustyc_hir::expressions::ExpressionKind, TyId)> {
+        let hir_operand = self.lower_expression(expression.get_operand())?;
 
         let ty = match expression.get_operator() {
             rustyc_ast::expressions::UnaryOperator::Negate => hir_operand.get_ty(),
@@ -163,7 +171,7 @@ impl ExpressionLowerer {
             }
         };
 
-        (
+        Ok((
             rustyc_hir::expressions::ExpressionKind::Unary(
                 rustyc_hir::expressions::UnaryExpression::new(
                     Self::lower_unary_operator(expression.get_operator()),
@@ -171,19 +179,31 @@ impl ExpressionLowerer {
                 ),
             ),
             ty,
-        )
+        ))
     }
 
     fn lower_variable_expression(
         &self,
         expression: &rustyc_ast::expressions::VariableExpression,
-    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
-        (
+    ) -> rustyc_diagnostics::Result<(rustyc_hir::expressions::ExpressionKind, TyId)> {
+        let hir_local = self
+            .context
+            .get_hir_local(expression.get_name())
+            .ok_or_else(|| {
+                Diagnostic::new_error(
+                    rustyc_diagnostics::Error::UndeclaredIdentifier(
+                        expression.get_name().to_owned(),
+                    ),
+                    self.expression.get_span().clone(),
+                )
+            })?;
+
+        Ok((
             rustyc_hir::expressions::ExpressionKind::Variable(
-                rustyc_hir::expressions::VariableExpression::new(expression.get_name().to_owned()),
+                rustyc_hir::expressions::VariableExpression::new(hir_local),
             ),
             self.ty_context.borrow_mut().register(Ty::Int),
-        )
+        ))
     }
 
     fn lower_number_expression(
@@ -201,20 +221,22 @@ impl ExpressionLowerer {
     fn lower_function_call_expression(
         &self,
         expression: &rustyc_ast::expressions::FunctionCallExpression,
-    ) -> (rustyc_hir::expressions::ExpressionKind, TyId) {
-        (
+    ) -> rustyc_diagnostics::Result<(rustyc_hir::expressions::ExpressionKind, TyId)> {
+        let hir_arguments = expression
+            .get_arguments()
+            .iter()
+            .map(|argument| self.lower_expression(Rc::clone(argument)))
+            .collect::<rustyc_diagnostics::Result<Vec<_>>>()?;
+
+        Ok((
             rustyc_hir::expressions::ExpressionKind::FunctionCall(
                 rustyc_hir::expressions::FunctionCallExpression::new(
                     expression.get_name().to_owned(),
-                    expression
-                        .get_arguments()
-                        .iter()
-                        .map(|argument| self.lower_expression(Rc::clone(argument)))
-                        .collect(),
+                    hir_arguments,
                 ),
             ),
             self.ty_context.borrow_mut().register(Ty::Int),
-        )
+        ))
     }
 
     fn lower_add(
@@ -360,8 +382,12 @@ impl ExpressionLowerer {
     fn lower_expression(
         &self,
         expression: Rc<rustyc_ast::expressions::Expression>,
-    ) -> Rc<rustyc_hir::expressions::Expression> {
-        let expression_lowerer = Self::new(expression, Rc::clone(&self.ty_context));
+    ) -> rustyc_diagnostics::Result<Rc<rustyc_hir::expressions::Expression>> {
+        let expression_lowerer = Self::new(
+            Rc::clone(&self.context),
+            expression,
+            Rc::clone(&self.ty_context),
+        );
         expression_lowerer.lower()
     }
 }

@@ -42,4 +42,7 @@ pub enum Error {
 
     #[error("invalid operands to binary expression")]
     InvalidBinaryExpressionOperands,
+
+    #[error("use of undeclared identifier '{0}'")]
+    UndeclaredIdentifier(String),
 }

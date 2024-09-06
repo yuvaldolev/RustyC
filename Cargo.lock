@@ -176,7 +176,9 @@ name = "rustyc_ast_lowerer"
 version = "0.1.0"
 dependencies = [
  "rustyc_ast",
+ "rustyc_diagnostics",
  "rustyc_hir",
+ "rustyc_index",
  "rustyc_ty",
 ]
 
@@ -217,6 +219,7 @@ dependencies = [
 name = "rustyc_hir"
 version = "0.1.0"
 dependencies = [
+ "rustyc_index",
  "rustyc_span",
  "rustyc_ty",
 ]

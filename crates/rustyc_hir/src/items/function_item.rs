@@ -1,23 +1,28 @@
 use std::rc::Rc;
 
-use crate::Block;
+use rustyc_index::IndexVec;
+
+use crate::{Block, Local, LocalId};
 
 pub struct FunctionItem {
     name: String,
-    parameters: Vec<String>,
+    locals: IndexVec<LocalId, Local>,
+    parameters: Vec<LocalId>,
     body: Rc<Block>,
-    local_variables: Vec<String>,
+    local_variables: Vec<LocalId>,
 }
 
 impl FunctionItem {
     pub fn new(
         name: String,
-        parameters: Vec<String>,
+        locals: IndexVec<LocalId, Local>,
+        parameters: Vec<LocalId>,
         body: Rc<Block>,
-        local_variables: Vec<String>,
+        local_variables: Vec<LocalId>,
     ) -> Self {
         Self {
             name,
+            locals,
             parameters,
             body,
             local_variables,
@@ -28,15 +33,7 @@ impl FunctionItem {
         &self.name
     }
 
-    pub fn get_parameters(&self) -> &[String] {
-        &self.parameters
-    }
-
     pub fn get_body(&self) -> Rc<Block> {
         Rc::clone(&self.body)
-    }
-
-    pub fn get_local_variables(&self) -> &[String] {
-        &self.local_variables
     }
 }

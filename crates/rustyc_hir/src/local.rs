@@ -1,7 +1,5 @@
 rustyc_index::newtype_index! {
-    pub struct LocalId {
-        const RETURN_PLACE = 0;
-    }
+    pub struct LocalId {}
 }
 
 pub struct Local;

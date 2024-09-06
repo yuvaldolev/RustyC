@@ -34,7 +34,6 @@ impl HirVisitor for MirBuildingVisitor {
         }
 
         self.body_builder = Some(BodyBuilder::new());
-
-        Ok(())
+        self.body_builder.unwrap().Ok(())
     }
 }

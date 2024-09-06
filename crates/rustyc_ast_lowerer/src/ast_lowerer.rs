@@ -16,18 +16,21 @@ impl AstLowerer {
         Self { ast, ty_context }
     }
 
-    pub fn lower(self) -> Rc<Hir> {
+    pub fn lower(self) -> rustyc_diagnostics::Result<Rc<Hir>> {
         // TODO: Can we get rid of `Rc` using `into_iter` instead of `iter`?
-        Rc::new(Hir::new(
+        Ok(Rc::new(Hir::new(
             self.ast
                 .get_items()
                 .iter()
                 .map(|item| self.lower_item(Rc::clone(item)))
-                .collect(),
-        ))
+                .collect::<rustyc_diagnostics::Result<Vec<_>>>()?,
+        )))
     }
 
-    fn lower_item(&self, item: Rc<rustyc_ast::items::Item>) -> Rc<rustyc_hir::items::Item> {
+    fn lower_item(
+        &self,
+        item: Rc<rustyc_ast::items::Item>,
+    ) -> rustyc_diagnostics::Result<Rc<rustyc_hir::items::Item>> {
         let item_lowerer = ItemLowerer::new(item, Rc::clone(&self.ty_context));
         item_lowerer.lower()
     }

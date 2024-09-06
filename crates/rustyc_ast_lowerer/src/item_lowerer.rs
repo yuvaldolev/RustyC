@@ -14,23 +14,23 @@ impl ItemLowerer {
         Self { item, ty_context }
     }
 
-    pub fn lower(self) -> Rc<rustyc_hir::items::Item> {
+    pub fn lower(self) -> rustyc_diagnostics::Result<Rc<rustyc_hir::items::Item>> {
         let hir_item_kind = match self.item.get_kind() {
             rustyc_ast::items::ItemKind::Function(function) => {
-                rustyc_hir::items::ItemKind::Function(self.lower_function(Rc::clone(function)))
+                rustyc_hir::items::ItemKind::Function(self.lower_function(Rc::clone(function))?)
             }
         };
 
-        Rc::new(rustyc_hir::items::Item::new(
+        Ok(Rc::new(rustyc_hir::items::Item::new(
             hir_item_kind,
             self.item.get_span().clone(),
-        ))
+        )))
     }
 
     fn lower_function(
         &self,
         function: Rc<rustyc_ast::items::FunctionItem>,
-    ) -> Rc<rustyc_hir::items::FunctionItem> {
+    ) -> rustyc_diagnostics::Result<Rc<rustyc_hir::items::FunctionItem>> {
         let lowerer = FunctionLowerer::new(function, Rc::clone(&self.ty_context));
         lowerer.lower()
     }

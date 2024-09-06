@@ -26,7 +26,8 @@ pub struct Parser {
     token: Token,
     previous_token: Token,
     expected_tokens: TokenCategorySet,
-    local_variables: Vec<String>,
+    function_parameters: Vec<String>,
+    function_local_varaibles: Vec<String>,
 }
 
 impl Parser {
@@ -36,7 +37,8 @@ impl Parser {
             token: Token::new_eof(),
             previous_token: Token::new_eof(),
             expected_tokens: TokenCategorySet::new(),
-            local_variables: Vec::new(),
+            function_parameters: Vec::new(),
+            function_local_varaibles: Vec::new(),
         };
 
         parser.bump();
@@ -70,11 +72,9 @@ impl Parser {
 
         self.expect_open_parenthesis()?;
 
-        let parameters = if self.check_close_parenthesis() {
-            Vec::new()
-        } else {
+        if !self.check_close_parenthesis() {
             self.parse_function_parameters()?
-        };
+        }
 
         self.expect_close_parenthesis()?;
 
@@ -82,12 +82,13 @@ impl Parser {
 
         let function = Rc::new(FunctionItem::new(
             name,
-            parameters,
+            self.function_parameters.clone(),
             body,
-            self.local_variables.clone(),
+            self.function_local_varaibles.clone(),
         ));
 
-        self.local_variables.clear();
+        self.function_local_varaibles.clear();
+        self.function_parameters.clear();
 
         Ok(function)
     }
@@ -418,8 +419,14 @@ impl Parser {
 
             // TODO: Currently, variable accesses also add a variable to the local
             // variables list. This should only be done for variable declarations.
-            if !self.local_variables.contains(&identifier) {
-                self.local_variables.insert(0, identifier.clone());
+            //
+            // TODO: When variables declarations are separated from variable access,
+            // the check for the function parameters should be removed.
+            if (!self.function_parameters.contains(&identifier))
+                && (!self.function_local_varaibles.contains(&identifier))
+            {
+                // TODO: Is inserting in the front of the vector really necessary?
+                self.function_local_varaibles.insert(0, identifier.clone());
             }
 
             return Ok(self.new_variable_expression(identifier, &low));
@@ -435,20 +442,17 @@ impl Parser {
         ))
     }
 
-    fn parse_function_parameters(&mut self) -> rustyc_diagnostics::Result<Vec<String>> {
-        let mut parameters: Vec<String> = Vec::new();
-
+    fn parse_function_parameters(&mut self) -> rustyc_diagnostics::Result<()> {
         loop {
             let parameter = self.expect_identifier()?;
-            self.local_variables.push(parameter.clone());
-            parameters.push(parameter);
+            self.function_parameters.push(parameter);
 
             if !self.eat_comma() {
                 break;
             }
         }
 
-        Ok(parameters)
+        Ok(())
     }
 
     fn parse_function_call(
