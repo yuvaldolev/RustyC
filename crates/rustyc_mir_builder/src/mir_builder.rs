@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use rustyc_hir::Hir;
-use rustyc_hir_walker::HirWalker;
+use rustyc_hir_visitor::HirWalker;
 use rustyc_mir::Mir;
 use rustyc_ty::TyContext;
 

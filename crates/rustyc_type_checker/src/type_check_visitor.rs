@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use rustyc_diagnostics::Diagnostic;
 use rustyc_hir::expressions::{BinaryOperator, Expression};
-use rustyc_hir_walker::HirVisitor;
+use rustyc_hir_visitor::HirVisitor;
 use rustyc_span::Span;
 use rustyc_ty::{TyContext, TyMatcher};
 
@@ -62,7 +62,7 @@ impl HirVisitor for TypeCheckVisitor {
     fn visit_expression(
         &mut self,
         expression: &Expression,
-        walker: &rustyc_hir_walker::HirWalker,
+        walker: &rustyc_hir_visitor::HirWalker,
     ) -> rustyc_diagnostics::Result<()> {
         self.span_stack.push(expression.get_span().clone());
         walker.walk_expression(expression, self)?;
@@ -74,7 +74,7 @@ impl HirVisitor for TypeCheckVisitor {
     fn visit_binary_expression(
         &mut self,
         expression: &rustyc_hir::expressions::BinaryExpression,
-        walker: &rustyc_hir_walker::HirWalker,
+        walker: &rustyc_hir_visitor::HirWalker,
     ) -> rustyc_diagnostics::Result<()> {
         walker.walk_binary_expression(expression, self)?;
 

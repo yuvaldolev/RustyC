@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use rustyc_hir::Hir;
-use rustyc_hir_walker::HirWalker;
+use rustyc_hir_visitor::HirWalker;
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter,

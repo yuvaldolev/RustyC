@@ -7,7 +7,7 @@ use rustyc_hir::{
     items::{FunctionItem, Item},
     statements::{IfStatement, LoopStatement, ReturnStatement},
 };
-use rustyc_hir_walker::{HirVisitor, HirWalker};
+use rustyc_hir_visitor::{HirVisitor, HirWalker};
 
 use crate::{
     code_generation_context::CodeGenerationContext, expression_generator::ExpressionGenerator,

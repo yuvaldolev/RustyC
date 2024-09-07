@@ -1,5 +1,5 @@
 use rustyc_hir::items::FunctionItem;
-use rustyc_hir_walker::{HirVisitor, HirWalker};
+use rustyc_hir_visitor::{HirVisitor, HirWalker};
 use rustyc_index::IndexVec;
 use rustyc_mir::{Body, BodyId, Mir};
 

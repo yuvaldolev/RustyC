@@ -188,7 +188,7 @@ version = "0.1.0"
 dependencies = [
  "rustyc_diagnostics",
  "rustyc_hir",
- "rustyc_hir_walker",
+ "rustyc_hir_visitor",
 ]
 
 [[package]]
@@ -225,7 +225,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustyc_hir_walker"
+name = "rustyc_hir_visitor"
 version = "0.1.0"
 dependencies = [
  "rustyc_diagnostics",
@@ -270,7 +270,7 @@ version = "0.1.0"
 dependencies = [
  "rustyc_diagnostics",
  "rustyc_hir",
- "rustyc_hir_walker",
+ "rustyc_hir_visitor",
  "rustyc_index",
  "rustyc_mir",
  "rustyc_ty",
@@ -308,7 +308,7 @@ version = "0.1.0"
 dependencies = [
  "rustyc_diagnostics",
  "rustyc_hir",
- "rustyc_hir_walker",
+ "rustyc_hir_visitor",
  "rustyc_span",
  "rustyc_ty",
 ]
