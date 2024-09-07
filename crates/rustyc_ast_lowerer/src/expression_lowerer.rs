@@ -184,7 +184,7 @@ impl ExpressionLowerer {
 
     fn lower_variable_expression(
         &self,
-        expression: &rustyc_ast::expressions::VariableExpression,
+        expression: &rustyc_ast::expressions::VariableReferenceExpression,
     ) -> rustyc_diagnostics::Result<(rustyc_hir::expressions::ExpressionKind, TyId)> {
         let hir_local = self
             .context
@@ -200,7 +200,7 @@ impl ExpressionLowerer {
 
         Ok((
             rustyc_hir::expressions::ExpressionKind::Variable(
-                rustyc_hir::expressions::VariableExpression::new(hir_local),
+                rustyc_hir::expressions::VariableReferenceExpression::new(hir_local),
             ),
             self.ty_context.borrow_mut().register(Ty::Int),
         ))

@@ -2,7 +2,7 @@ use rustyc_diagnostics::Diagnostic;
 use rustyc_hir::{
     expressions::{
         AssignmentExpression, BinaryExpression, BinaryOperator, Expression, ExpressionKind,
-        FunctionCallExpression, UnaryExpression, UnaryOperator, VariableExpression,
+        FunctionCallExpression, UnaryExpression, UnaryOperator, VariableReferenceExpression,
     },
     items::{FunctionItem, Item},
     statements::{IfStatement, LoopStatement, ReturnStatement},
@@ -256,7 +256,7 @@ impl HirVisitor for CodeGenerationVisitor {
 
     fn visit_variable_expression(
         &mut self,
-        expression: &VariableExpression,
+        expression: &VariableReferenceExpression,
         _walker: &HirWalker,
     ) -> rustyc_diagnostics::Result<()> {
         self.expression_generator

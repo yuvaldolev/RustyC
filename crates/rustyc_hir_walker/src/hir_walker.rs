@@ -1,7 +1,7 @@
 use rustyc_hir::{
     expressions::{
         AssignmentExpression, BinaryExpression, Expression, ExpressionKind, FunctionCallExpression,
-        NumberExpression, UnaryExpression, VariableExpression,
+        NumberExpression, UnaryExpression, VariableReferenceExpression,
     },
     items::{FunctionItem, Item, ItemKind},
     statements::{
@@ -193,7 +193,7 @@ impl HirWalker {
 
     pub fn walk_variable_expression(
         &self,
-        _expression: &VariableExpression,
+        _expression: &VariableReferenceExpression,
         _visitor: &mut impl HirVisitor,
     ) -> rustyc_diagnostics::Result<()> {
         Ok(())

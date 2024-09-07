@@ -1,6 +1,6 @@
 use super::{
     AssignmentExpression, BinaryExpression, FunctionCallExpression, NumberExpression,
-    UnaryExpression, VariableExpression,
+    UnaryExpression, VariableReferenceExpression,
 };
 
 #[derive(Clone, Debug)]
@@ -8,7 +8,7 @@ pub enum ExpressionKind {
     Assignment(AssignmentExpression),
     Binary(BinaryExpression),
     Unary(UnaryExpression),
-    Variable(VariableExpression),
+    VariableReference(VariableReferenceExpression),
     Number(NumberExpression),
     FunctionCall(FunctionCallExpression),
 }

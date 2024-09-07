@@ -34,6 +34,8 @@ impl HirVisitor for MirBuildingVisitor {
         }
 
         self.body_builder = Some(BodyBuilder::new());
+        self.body_builder
+            .parameters(function.get_parameters(), function.get_locals());
         self.body_builder.unwrap().Ok(())
     }
 }

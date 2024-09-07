@@ -1,4 +1,7 @@
-use super::{CompoundStatement, ExpressionStatement, IfStatement, LoopStatement, ReturnStatement};
+use super::{
+    CompoundStatement, ExpressionStatement, IfStatement, LocalDeclarationStatement, LoopStatement,
+    ReturnStatement,
+};
 
 #[derive(Clone)]
 pub enum StatementKind {
@@ -7,4 +10,5 @@ pub enum StatementKind {
     Loop(LoopStatement),
     Compound(CompoundStatement),
     Expression(ExpressionStatement),
+    LocalDeclaration(LocalDeclarationStatement),
 }

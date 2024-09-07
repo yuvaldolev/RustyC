@@ -1,4 +1,6 @@
-use rustyc_hir::expressions::{FunctionCallExpression, NumberExpression, VariableExpression};
+use rustyc_hir::expressions::{
+    FunctionCallExpression, NumberExpression, VariableReferenceExpression,
+};
 
 use crate::{
     aarch64_instruction_emitter::Aarch64InstructionEmitter,
@@ -72,7 +74,7 @@ impl ExpressionGenerator {
 
     pub fn generate_address_of_variable(
         &self,
-        variable: &VariableExpression,
+        variable: &VariableReferenceExpression,
         context: &CodeGenerationContext,
     ) {
         // TODO: Emit an error if the variable is not found, instead of panicking.
@@ -96,7 +98,7 @@ impl ExpressionGenerator {
 
     pub fn generate_variable_expression(
         &self,
-        variable: &VariableExpression,
+        variable: &VariableReferenceExpression,
         context: &CodeGenerationContext,
     ) {
         // TODO: Emit an error if the variable is not found, instead of panicking.

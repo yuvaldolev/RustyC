@@ -1,11 +1,11 @@
 use crate::LocalId;
 
 #[derive(Clone, Debug)]
-pub struct VariableExpression {
+pub struct VariableReferenceExpression {
     id: LocalId,
 }
 
-impl VariableExpression {
+impl VariableReferenceExpression {
     pub fn new(id: LocalId) -> Self {
         Self { id }
     }

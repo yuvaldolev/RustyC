@@ -7,4 +7,5 @@ pub enum Keyword {
     Else,
     For,
     While,
+    Int,
 }
